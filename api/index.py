@@ -1,16 +1,23 @@
 import sys
+import os
+import traceback
 
-results = []
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-for pkg in ["flask", "flask_cors", "flask_sqlalchemy", "pg8000", "jwt", "requests"]:
-    try:
-        __import__(pkg)
-        results.append(f"OK: {pkg}")
-    except Exception as e:
-        results.append(f"FAIL: {pkg} -> {e}")
+_import_error = None
+_import_tb = None
+app = None
 
+try:
+    from app import app
+except Exception as e:
+    _import_error = f"{type(e).__name__}: {e}"
+    _import_tb = traceback.format_exc()
 
-def app(environ, start_response):
-    body = ("\n".join(results)).encode()
-    start_response("200 OK", [("Content-Type", "text/plain"), ("Content-Length", str(len(body)))])
-    return [body]
+    def app(environ, start_response):
+        body = f"IMPORT FAILED:\n{_import_error}\n\nTraceback:\n{_import_tb}".encode()
+        start_response("500 Internal Server Error", [
+            ("Content-Type", "text/plain"),
+            ("Content-Length", str(len(body))),
+        ])
+        return [body]
