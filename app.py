@@ -14,23 +14,16 @@ _import_errors = {}
 _startup_error = None
 
 try:
-    import ssl as _ssl
     basedir = os.path.abspath(os.path.dirname(__file__))
     app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "nexora-dev-secret-key-change-in-production")
 
     _db_url = os.environ.get("DATABASE_URL", "sqlite:///" + os.path.join(basedir, "instance", "nexora.db"))
     if _db_url.startswith("postgres://"):
         _db_url = _db_url.replace("postgres://", "postgresql://", 1)
-    if _db_url.startswith("postgresql://"):
-        _db_url = _db_url.replace("postgresql://", "postgresql+pg8000://", 1)
-        _db_url = _db_url.split("?")[0]
+    if _db_url.startswith("postgresql://") and "sslmode" not in _db_url:
+        _db_url += "?sslmode=require"
     app.config["SQLALCHEMY_DATABASE_URI"] = _db_url
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-    if _db_url.startswith("postgresql+pg8000://"):
-        _ssl_ctx = _ssl.create_default_context()
-        _ssl_ctx.check_hostname = False
-        _ssl_ctx.verify_mode = _ssl.CERT_NONE
-        app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"connect_args": {"ssl_context": _ssl_ctx}}
     app.config["MEMORIA"] = {}
 except Exception as e:
     _boot_errors.append(f"config: {type(e).__name__}: {e}")
