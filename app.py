@@ -1,20 +1,9 @@
 import os
 import logging
-from flask import Flask, send_file, send_from_directory, jsonify
+import ssl as _ssl
+from flask import Flask, send_file, jsonify
 from flask_cors import CORS
 from config_db import db
-from routes.auth import auth_bp
-from routes.business import business_bp
-from routes.chat import chat_bp
-from routes.resource import resource_bp
-from routes.sales import sales_bp
-from routes.insumos import insumos_bp
-from routes.recipes import recipes_bp
-from routes.production import production_bp
-from routes.clients import clients_bp
-from routes.pedidos import pedidos_bp
-from routes.gastos import gastos_bp
-from routes.fiado import fiado_bp
 
 app = Flask(__name__)
 CORS(app)
@@ -27,31 +16,57 @@ if _db_url.startswith("postgres://"):
     _db_url = _db_url.replace("postgres://", "postgresql://", 1)
 if _db_url.startswith("postgresql://"):
     _db_url = _db_url.replace("postgresql://", "postgresql+pg8000://", 1)
-    _db_url = _db_url.split("?")[0]  # strip any ?sslmode= params (pg8000 uses ssl_context)
+    _db_url = _db_url.split("?")[0]
 app.config["SQLALCHEMY_DATABASE_URI"] = _db_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 if _db_url.startswith("postgresql+pg8000://"):
-    import ssl as _ssl
     _ssl_ctx = _ssl.create_default_context()
     _ssl_ctx.check_hostname = False
     _ssl_ctx.verify_mode = _ssl.CERT_NONE
     app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"connect_args": {"ssl_context": _ssl_ctx}}
 app.config["MEMORIA"] = {}
 
-app.register_blueprint(auth_bp, url_prefix="/api")
-app.register_blueprint(business_bp, url_prefix="/api")
-app.register_blueprint(chat_bp, url_prefix="/api")
-app.register_blueprint(resource_bp, url_prefix="/api")
-app.register_blueprint(sales_bp, url_prefix="/api")
-app.register_blueprint(insumos_bp, url_prefix="/api")
-app.register_blueprint(recipes_bp, url_prefix="/api")
-app.register_blueprint(production_bp, url_prefix="/api")
-app.register_blueprint(clients_bp, url_prefix="/api")
-app.register_blueprint(pedidos_bp, url_prefix="/api")
-app.register_blueprint(gastos_bp, url_prefix="/api")
-app.register_blueprint(fiado_bp, url_prefix="/api")
-
 db.init_app(app)
+
+# Import each blueprint separately to isolate failures
+_import_errors = {}
+
+def _safe_import(module, attr):
+    try:
+        import importlib
+        mod = importlib.import_module(module)
+        return getattr(mod, attr)
+    except Exception as e:
+        _import_errors[module] = f"{type(e).__name__}: {e}"
+        logging.error(f"Import failed {module}: {e}")
+        from flask import Blueprint
+        return Blueprint(f"dummy_{attr}", __name__)
+
+auth_bp       = _safe_import("routes.auth",       "auth_bp")
+business_bp   = _safe_import("routes.business",   "business_bp")
+chat_bp       = _safe_import("routes.chat",        "chat_bp")
+resource_bp   = _safe_import("routes.resource",   "resource_bp")
+sales_bp      = _safe_import("routes.sales",       "sales_bp")
+insumos_bp    = _safe_import("routes.insumos",     "insumos_bp")
+recipes_bp    = _safe_import("routes.recipes",     "recipes_bp")
+production_bp = _safe_import("routes.production",  "production_bp")
+clients_bp    = _safe_import("routes.clients",     "clients_bp")
+pedidos_bp    = _safe_import("routes.pedidos",     "pedidos_bp")
+gastos_bp     = _safe_import("routes.gastos",      "gastos_bp")
+fiado_bp      = _safe_import("routes.fiado",       "fiado_bp")
+
+app.register_blueprint(auth_bp,       url_prefix="/api")
+app.register_blueprint(business_bp,   url_prefix="/api")
+app.register_blueprint(chat_bp,       url_prefix="/api")
+app.register_blueprint(resource_bp,   url_prefix="/api")
+app.register_blueprint(sales_bp,      url_prefix="/api")
+app.register_blueprint(insumos_bp,    url_prefix="/api")
+app.register_blueprint(recipes_bp,    url_prefix="/api")
+app.register_blueprint(production_bp, url_prefix="/api")
+app.register_blueprint(clients_bp,    url_prefix="/api")
+app.register_blueprint(pedidos_bp,    url_prefix="/api")
+app.register_blueprint(gastos_bp,     url_prefix="/api")
+app.register_blueprint(fiado_bp,      url_prefix="/api")
 
 _startup_error = None
 
@@ -73,15 +88,18 @@ try:
             os.makedirs("instance", exist_ok=True)
         db.create_all()
 except Exception as e:
-    _startup_error = str(e)
+    _startup_error = f"{type(e).__name__}: {e}"
     logging.error(f"Startup DB error: {e}")
 
 
 @app.route("/health")
 def health():
-    if _startup_error:
-        return jsonify({"status": "error", "detail": _startup_error}), 500
-    return jsonify({"status": "ok", "db": _db_url.split("@")[-1] if "@" in _db_url else "sqlite"})
+    return jsonify({
+        "status":        "error" if (_startup_error or _import_errors) else "ok",
+        "db":            _db_url.split("@")[-1] if "@" in _db_url else "sqlite",
+        "startup_error": _startup_error,
+        "import_errors": _import_errors,
+    }), (500 if _startup_error else 200)
 
 
 @app.route("/")
