@@ -1,5 +1,6 @@
 import os
-from flask import Flask, send_file, send_from_directory
+import logging
+from flask import Flask, send_file, send_from_directory, jsonify
 from flask_cors import CORS
 from config_db import db
 from routes.auth import auth_bp
@@ -24,10 +25,10 @@ app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "nexora-dev-secret-key-c
 _db_url = os.environ.get("DATABASE_URL", "sqlite:///" + os.path.join(basedir, "instance", "nexora.db"))
 if _db_url.startswith("postgres://"):
     _db_url = _db_url.replace("postgres://", "postgresql://", 1)
+if _db_url.startswith("postgresql://") and "sslmode" not in _db_url:
+    _db_url += "?sslmode=require"
 app.config["SQLALCHEMY_DATABASE_URI"] = _db_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-if _db_url.startswith("postgresql://"):
-    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"connect_args": {"sslmode": "require"}}
 app.config["MEMORIA"] = {}
 
 app.register_blueprint(auth_bp, url_prefix="/api")
@@ -45,22 +46,35 @@ app.register_blueprint(fiado_bp, url_prefix="/api")
 
 db.init_app(app)
 
-with app.app_context():
-    from models.product import Product
-    from models.resource import Resource
-    from models.chat_message import ChatMessage
-    from models.sale import Sale
-    from models.insumo import Insumo
-    from models.recipe_item import RecipeItem
-    from models.production_log import ProductionLog
-    from models.client import Client
-    from models.pedido import Pedido
-    from models.gasto import Gasto
-    from models.fiado import Fiado
+_startup_error = None
 
-    if _db_url.startswith("sqlite"):
-        os.makedirs("instance", exist_ok=True)
-    db.create_all()
+try:
+    with app.app_context():
+        from models.product import Product
+        from models.resource import Resource
+        from models.chat_message import ChatMessage
+        from models.sale import Sale
+        from models.insumo import Insumo
+        from models.recipe_item import RecipeItem
+        from models.production_log import ProductionLog
+        from models.client import Client
+        from models.pedido import Pedido
+        from models.gasto import Gasto
+        from models.fiado import Fiado
+
+        if _db_url.startswith("sqlite"):
+            os.makedirs("instance", exist_ok=True)
+        db.create_all()
+except Exception as e:
+    _startup_error = str(e)
+    logging.error(f"Startup DB error: {e}")
+
+
+@app.route("/health")
+def health():
+    if _startup_error:
+        return jsonify({"status": "error", "detail": _startup_error}), 500
+    return jsonify({"status": "ok", "db": _db_url.split("@")[-1] if "@" in _db_url else "sqlite"})
 
 
 @app.route("/")
