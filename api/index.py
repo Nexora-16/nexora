@@ -2,6 +2,12 @@ import sys
 import os
 import traceback
 
+# Force pip-installed packages to take precedence over Vercel's vendored packages
+_pip_paths = [p for p in sys.path if 'site-packages' in p or '.venv' in p]
+_other_paths = [p for p in sys.path if p not in _pip_paths]
+sys.path = _pip_paths + _other_paths
+
+# Add project root so app.py and all its modules can be found
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 _import_error = None
