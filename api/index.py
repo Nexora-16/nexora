@@ -1,22 +1,14 @@
 import sys
 import os
+import repr as _repr
 
-# Reorder sys.path to try pip packages first
-_pip = [p for p in sys.path if 'site-packages' in p or '.venv' in p]
-_other = [p for p in sys.path if p not in _pip]
-sys.path = _pip + _other
-
-import flask_sqlalchemy as _fsql
-import sqlalchemy as _sa
+db_url = os.environ.get("DATABASE_URL", "NOT_SET")
 
 lines = [
-    f"flask_sqlalchemy: {getattr(_fsql, '__file__', '?')}",
-    f"flask_sqlalchemy version: {getattr(_fsql, '__version__', '?')}",
-    f"sqlalchemy: {getattr(_sa, '__file__', '?')}",
-    f"sqlalchemy version: {getattr(_sa, '__version__', '?')}",
-    "",
-    "SYS.PATH:",
-] + sys.path[:20]
+    f"DATABASE_URL length: {len(db_url)}",
+    f"DATABASE_URL repr: {repr(db_url[:80])}",
+    f"First chars hex: {db_url[:10].encode().hex()}",
+]
 
 
 def app(environ, start_response):
