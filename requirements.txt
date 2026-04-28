@@ -3,6 +3,6 @@ flask-cors
 flask-sqlalchemy
 pyjwt
 werkzeug
-psycopg2-binary
+pg8000
 requests
 duckduckgo-search
