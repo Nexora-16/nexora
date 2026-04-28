@@ -1,0 +1,8 @@
+flask
+flask-cors
+flask-sqlalchemy
+pyjwt
+werkzeug
+psycopg2-binary
+requests
+duckduckgo-search
