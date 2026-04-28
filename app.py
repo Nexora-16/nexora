@@ -2,17 +2,19 @@ import os
 import sys
 import logging
 
-_boot_error = None
+from flask import Flask, send_file, jsonify
+from flask_cors import CORS
+from config_db import db
+
+app = Flask(__name__)
+CORS(app)
+
+_boot_errors = []
+_import_errors = {}
+_startup_error = None
 
 try:
     import ssl as _ssl
-    from flask import Flask, send_file, jsonify
-    from flask_cors import CORS
-    from config_db import db
-
-    app = Flask(__name__)
-    CORS(app)
-
     basedir = os.path.abspath(os.path.dirname(__file__))
     app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "nexora-dev-secret-key-change-in-production")
 
@@ -30,112 +32,105 @@ try:
         _ssl_ctx.verify_mode = _ssl.CERT_NONE
         app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"connect_args": {"ssl_context": _ssl_ctx}}
     app.config["MEMORIA"] = {}
+except Exception as e:
+    _boot_errors.append(f"config: {type(e).__name__}: {e}")
+    _db_url = "sqlite:///instance/nexora.db"
+    app.config["SECRET_KEY"] = "fallback"
+    app.config["SQLALCHEMY_DATABASE_URI"] = _db_url
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    app.config["MEMORIA"] = {}
 
-    db.init_app(app)
+db.init_app(app)
 
-    _import_errors = {}
 
-    def _safe_import(module, attr):
-        try:
-            import importlib
-            mod = importlib.import_module(module)
-            return getattr(mod, attr)
-        except Exception as e:
-            _import_errors[module] = f"{type(e).__name__}: {e}"
-            logging.error(f"Import failed {module}: {e}")
-            from flask import Blueprint
-            return Blueprint(f"dummy_{attr}", __name__)
-
-    auth_bp       = _safe_import("routes.auth",       "auth_bp")
-    business_bp   = _safe_import("routes.business",   "business_bp")
-    chat_bp       = _safe_import("routes.chat",        "chat_bp")
-    resource_bp   = _safe_import("routes.resource",   "resource_bp")
-    sales_bp      = _safe_import("routes.sales",       "sales_bp")
-    insumos_bp    = _safe_import("routes.insumos",     "insumos_bp")
-    recipes_bp    = _safe_import("routes.recipes",     "recipes_bp")
-    production_bp = _safe_import("routes.production",  "production_bp")
-    clients_bp    = _safe_import("routes.clients",     "clients_bp")
-    pedidos_bp    = _safe_import("routes.pedidos",     "pedidos_bp")
-    gastos_bp     = _safe_import("routes.gastos",      "gastos_bp")
-    fiado_bp      = _safe_import("routes.fiado",       "fiado_bp")
-
-    app.register_blueprint(auth_bp,       url_prefix="/api")
-    app.register_blueprint(business_bp,   url_prefix="/api")
-    app.register_blueprint(chat_bp,       url_prefix="/api")
-    app.register_blueprint(resource_bp,   url_prefix="/api")
-    app.register_blueprint(sales_bp,      url_prefix="/api")
-    app.register_blueprint(insumos_bp,    url_prefix="/api")
-    app.register_blueprint(recipes_bp,    url_prefix="/api")
-    app.register_blueprint(production_bp, url_prefix="/api")
-    app.register_blueprint(clients_bp,    url_prefix="/api")
-    app.register_blueprint(pedidos_bp,    url_prefix="/api")
-    app.register_blueprint(gastos_bp,     url_prefix="/api")
-    app.register_blueprint(fiado_bp,      url_prefix="/api")
-
-    _startup_error = None
+def _safe_import(module, attr):
     try:
-        with app.app_context():
-            from models.product import Product
-            from models.resource import Resource
-            from models.chat_message import ChatMessage
-            from models.sale import Sale
-            from models.insumo import Insumo
-            from models.recipe_item import RecipeItem
-            from models.production_log import ProductionLog
-            from models.client import Client
-            from models.pedido import Pedido
-            from models.gasto import Gasto
-            from models.fiado import Fiado
-
-            if _db_url.startswith("sqlite"):
-                os.makedirs("instance", exist_ok=True)
-            db.create_all()
+        import importlib
+        mod = importlib.import_module(module)
+        return getattr(mod, attr)
     except Exception as e:
-        _startup_error = f"{type(e).__name__}: {e}"
-        logging.error(f"Startup DB error: {e}")
+        _import_errors[module] = f"{type(e).__name__}: {e}"
+        from flask import Blueprint
+        return Blueprint(f"dummy_{attr}", __name__)
 
-    @app.route("/health")
-    def health():
-        return jsonify({
-            "status":        "error" if (_startup_error or _import_errors) else "ok",
-            "db":            _db_url.split("@")[-1] if "@" in _db_url else "sqlite",
-            "startup_error": _startup_error,
-            "import_errors": _import_errors,
-            "python":        sys.version,
-        }), (500 if _startup_error else 200)
 
-    @app.route("/")
-    def index():
-        return send_file("index.html")
+auth_bp       = _safe_import("routes.auth",       "auth_bp")
+business_bp   = _safe_import("routes.business",   "business_bp")
+chat_bp       = _safe_import("routes.chat",        "chat_bp")
+resource_bp   = _safe_import("routes.resource",   "resource_bp")
+sales_bp      = _safe_import("routes.sales",       "sales_bp")
+insumos_bp    = _safe_import("routes.insumos",     "insumos_bp")
+recipes_bp    = _safe_import("routes.recipes",     "recipes_bp")
+production_bp = _safe_import("routes.production",  "production_bp")
+clients_bp    = _safe_import("routes.clients",     "clients_bp")
+pedidos_bp    = _safe_import("routes.pedidos",     "pedidos_bp")
+gastos_bp     = _safe_import("routes.gastos",      "gastos_bp")
+fiado_bp      = _safe_import("routes.fiado",       "fiado_bp")
 
-    @app.route("/manifest.json")
-    def manifest():
-        return send_file("manifest.json")
+app.register_blueprint(auth_bp,       url_prefix="/api")
+app.register_blueprint(business_bp,   url_prefix="/api")
+app.register_blueprint(chat_bp,       url_prefix="/api")
+app.register_blueprint(resource_bp,   url_prefix="/api")
+app.register_blueprint(sales_bp,      url_prefix="/api")
+app.register_blueprint(insumos_bp,    url_prefix="/api")
+app.register_blueprint(recipes_bp,    url_prefix="/api")
+app.register_blueprint(production_bp, url_prefix="/api")
+app.register_blueprint(clients_bp,    url_prefix="/api")
+app.register_blueprint(pedidos_bp,    url_prefix="/api")
+app.register_blueprint(gastos_bp,     url_prefix="/api")
+app.register_blueprint(fiado_bp,      url_prefix="/api")
 
-    @app.route("/sw.js")
-    def service_worker():
-        resp = send_file("sw.js", mimetype="application/javascript")
-        resp.headers["Service-Worker-Allowed"] = "/"
-        return resp
+try:
+    with app.app_context():
+        from models.product import Product
+        from models.resource import Resource
+        from models.chat_message import ChatMessage
+        from models.sale import Sale
+        from models.insumo import Insumo
+        from models.recipe_item import RecipeItem
+        from models.production_log import ProductionLog
+        from models.client import Client
+        from models.pedido import Pedido
+        from models.gasto import Gasto
+        from models.fiado import Fiado
+        if _db_url.startswith("sqlite"):
+            os.makedirs("instance", exist_ok=True)
+        db.create_all()
+except Exception as e:
+    _startup_error = f"{type(e).__name__}: {e}"
+    logging.error(f"DB startup error: {e}")
 
-    @app.route("/nexora-icon.svg")
-    def icon():
-        return send_file("nexora-icon.svg", mimetype="image/svg+xml")
 
-except Exception as _e:
-    _boot_error = f"{type(_e).__name__}: {_e}"
-    logging.error(f"BOOT FAILED: {_boot_error}")
+@app.route("/health")
+def health():
+    return jsonify({
+        "ok":            not (_boot_errors or _import_errors or _startup_error),
+        "boot_errors":   _boot_errors,
+        "import_errors": _import_errors,
+        "startup_error": _startup_error,
+        "python":        sys.version,
+        "db":            _db_url.split("@")[-1] if "@" in _db_url else "sqlite",
+    })
 
-    def app(environ, start_response):
-        body = f"Boot error: {_boot_error} | Python: {sys.version}".encode()
-        start_response("500 Internal Server Error", [
-            ("Content-Type", "text/plain"),
-            ("Content-Length", str(len(body))),
-        ])
-        return [body]
+
+@app.route("/")
+def index():
+    return send_file("index.html")
+
+@app.route("/manifest.json")
+def manifest():
+    return send_file("manifest.json")
+
+@app.route("/sw.js")
+def service_worker():
+    resp = send_file("sw.js", mimetype="application/javascript")
+    resp.headers["Service-Worker-Allowed"] = "/"
+    return resp
+
+@app.route("/nexora-icon.svg")
+def icon():
+    return send_file("nexora-icon.svg", mimetype="image/svg+xml")
 
 
 if __name__ == "__main__":
-    from flask import Flask as _Flask
-    if isinstance(app, _Flask):
-        app.run(debug=True, port=5000)
+    app.run(debug=True, port=5000)
