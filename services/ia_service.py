@@ -15,7 +15,7 @@ def _primer_producto(contexto):
 
 def buscar_competencia(termino, ubicacion):
     try:
-        from ddgs import DDGS
+        from duckduckgo_search import DDGS
         query = f"{termino} precio {ubicacion} comprar"
         with DDGS() as ddgs:
             results = list(ddgs.text(query, max_results=5))

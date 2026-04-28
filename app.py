@@ -26,6 +26,8 @@ if _db_url.startswith("postgres://"):
     _db_url = _db_url.replace("postgres://", "postgresql://", 1)
 app.config["SQLALCHEMY_DATABASE_URI"] = _db_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+if _db_url.startswith("postgresql://"):
+    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"connect_args": {"sslmode": "require"}}
 app.config["MEMORIA"] = {}
 
 app.register_blueprint(auth_bp, url_prefix="/api")
@@ -56,7 +58,8 @@ with app.app_context():
     from models.gasto import Gasto
     from models.fiado import Fiado
 
-    os.makedirs("instance", exist_ok=True)
+    if _db_url.startswith("sqlite"):
+        os.makedirs("instance", exist_ok=True)
     db.create_all()
 
 
