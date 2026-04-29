@@ -246,6 +246,32 @@ body {
   font-weight: 600;
 }
 
+/* Accordion groups */
+.nav-chevron {
+  margin-left: auto;
+  font-size: 11px;
+  opacity: 0.5;
+  display: inline-block;
+  transition: transform 0.22s ease, opacity 0.22s;
+}
+.nav-group-header.open .nav-chevron { transform: rotate(180deg); opacity: 1; }
+.nav-group-header.nav-group-active  { color: #4ade80; }
+
+.nav-group-items {
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.25s ease;
+}
+.nav-group-items.open { max-height: 260px; }
+
+.nav-group-items button {
+  padding-left: 42px;
+  font-size: 13px;
+  opacity: 0.85;
+}
+.nav-group-items button .nav-icon { font-size: 15px; }
+.nav-group-items button.nav-active { opacity: 1; }
+
 .sidebar-footer {
   padding: 14px 12px 32px;
   border-top: 1px solid rgba(34,197,94,0.1);
@@ -1219,39 +1245,88 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
     <span class="sidebar-logo-name">NEXORA</span>
   </div>
   <nav class="sidebar-nav">
-    <button data-screen="ia"          onclick="navTo('ia')">
+
+    <!-- IA (standalone) -->
+    <button data-screen="ia" onclick="navTo('ia')">
       <span class="nav-icon">🧠</span> Asistente IA
     </button>
-    <button data-screen="dashboard"   onclick="navTo('dashboard')">
-      <span class="nav-icon">📊</span> Dashboard
-    </button>
-    <button data-screen="inventario"  onclick="navTo('inventario')">
-      <span class="nav-icon">📋</span> Inventario
-    </button>
-    <button data-screen="ventas"      onclick="navTo('ventas')">
-      <span class="nav-icon">💰</span> Ventas
-    </button>
-    <button data-screen="clientes"   onclick="navTo('clientes')">
-      <span class="nav-icon">👥</span> Clientes
-    </button>
-    <button data-screen="reportes"   onclick="navTo('reportes')">
-      <span class="nav-icon">📈</span> Reportes
-    </button>
-    <button data-screen="gastos"     onclick="navTo('gastos')">
-      <span class="nav-icon">💸</span> Gastos
-    </button>
-    <button data-screen="insumos"    onclick="navTo('insumos')">
-      <span class="nav-icon">🧂</span> Insumos
-    </button>
+
+    <!-- Análisis: Dashboard + Reportes -->
+    <div class="nav-group">
+      <button class="nav-group-header" onclick="toggleNavGroup('gAnalisis')">
+        <span class="nav-icon">📊</span>
+        <span>Análisis</span>
+        <span class="nav-chevron">▾</span>
+      </button>
+      <div class="nav-group-items" id="gAnalisis">
+        <button data-screen="dashboard" onclick="navTo('dashboard')">
+          <span class="nav-icon">📊</span> Dashboard
+        </button>
+        <button data-screen="reportes" onclick="navTo('reportes')">
+          <span class="nav-icon">📈</span> Reportes
+        </button>
+      </div>
+    </div>
+
+    <!-- Inventario: Productos + Insumos -->
+    <div class="nav-group">
+      <button class="nav-group-header" onclick="toggleNavGroup('gInventario')">
+        <span class="nav-icon">📦</span>
+        <span>Inventario</span>
+        <span class="nav-chevron">▾</span>
+      </button>
+      <div class="nav-group-items" id="gInventario">
+        <button data-screen="inventario" onclick="navTo('inventario')">
+          <span class="nav-icon">📋</span> Productos
+        </button>
+        <button data-screen="insumos" onclick="navTo('insumos')">
+          <span class="nav-icon">🧂</span> Insumos
+        </button>
+      </div>
+    </div>
+
+    <!-- Operaciones: Ventas + Gastos + Clientes -->
+    <div class="nav-group">
+      <button class="nav-group-header" onclick="toggleNavGroup('gOperaciones')">
+        <span class="nav-icon">💼</span>
+        <span>Operaciones</span>
+        <span class="nav-chevron">▾</span>
+      </button>
+      <div class="nav-group-items" id="gOperaciones">
+        <button data-screen="ventas" onclick="navTo('ventas')">
+          <span class="nav-icon">💰</span> Ventas
+        </button>
+        <button data-screen="gastos" onclick="navTo('gastos')">
+          <span class="nav-icon">💸</span> Gastos
+        </button>
+        <button data-screen="clientes" onclick="navTo('clientes')">
+          <span class="nav-icon">👥</span> Clientes
+        </button>
+      </div>
+    </div>
+
+    <!-- Producción (standalone) -->
     <button data-screen="produccion" onclick="navTo('produccion')">
       <span class="nav-icon">👨‍🍳</span> Producción
     </button>
-    <button data-screen="recursos"    onclick="navTo('recursos')">
-      <span class="nav-icon">🏢</span> Recursos
-    </button>
-    <button data-screen="sucursales" onclick="navTo('sucursales')" id="navSucursales">
-      <span class="nav-icon">🏪</span> Sucursales
-    </button>
+
+    <!-- Configuración: Recursos + Sucursales -->
+    <div class="nav-group">
+      <button class="nav-group-header" onclick="toggleNavGroup('gConfig')">
+        <span class="nav-icon">⚙️</span>
+        <span>Configuración</span>
+        <span class="nav-chevron">▾</span>
+      </button>
+      <div class="nav-group-items" id="gConfig">
+        <button data-screen="recursos" onclick="navTo('recursos')">
+          <span class="nav-icon">🏢</span> Recursos
+        </button>
+        <button data-screen="sucursales" onclick="navTo('sucursales')" id="navSucursales">
+          <span class="nav-icon">🏪</span> Sucursales
+        </button>
+      </div>
+    </div>
+
   </nav>
   <div class="sidebar-footer">
     <button onclick="logout()">
@@ -2029,6 +2104,45 @@ function handleUnauthorized() {
 }
 
 
+// ─── SIDEBAR ACCORDION ───────────────────────────────────────────────────────
+
+const SCREEN_GROUP_MAP = {
+  dashboard:  "gAnalisis",
+  reportes:   "gAnalisis",
+  inventario: "gInventario",
+  insumos:    "gInventario",
+  ventas:     "gOperaciones",
+  gastos:     "gOperaciones",
+  clientes:   "gOperaciones",
+  recursos:   "gConfig",
+  sucursales: "gConfig",
+};
+
+function toggleNavGroup(groupId) {
+  const items  = document.getElementById(groupId);
+  const header = items.previousElementSibling;
+  const isOpen = items.classList.contains("open");
+  // Close all groups
+  document.querySelectorAll(".nav-group-items").forEach(g => g.classList.remove("open"));
+  document.querySelectorAll(".nav-group-header").forEach(h => h.classList.remove("open","nav-group-active"));
+  // Open this one if it was closed
+  if (!isOpen) {
+    items.classList.add("open");
+    header.classList.add("open");
+  }
+}
+
+function openGroupFor(screen) {
+  const groupId = SCREEN_GROUP_MAP[screen];
+  if (!groupId) return;
+  document.querySelectorAll(".nav-group-items").forEach(g => g.classList.remove("open"));
+  document.querySelectorAll(".nav-group-header").forEach(h => h.classList.remove("open","nav-group-active"));
+  const items  = document.getElementById(groupId);
+  const header = items?.previousElementSibling;
+  if (items)  items.classList.add("open");
+  if (header) header.classList.add("open", "nav-group-active");
+}
+
 // ─── SIDEBAR ────────────────────────────────────────────────────────────────
 
 function toggleSidebar() {
@@ -2059,10 +2173,11 @@ function navTo(pantalla) {
   // Update topbar title
   document.getElementById("topbarTitle").textContent = SCREEN_TITLES[pantalla] || "";
 
-  // Update sidebar active button
+  // Update sidebar active button + open parent group
   document.querySelectorAll(".sidebar-nav button").forEach(b => b.classList.remove("nav-active"));
   const btn = document.querySelector(`.sidebar-nav button[data-screen="${pantalla}"]`);
   if (btn) btn.classList.add("nav-active");
+  openGroupFor(pantalla);
 
   closeSidebar();
   if ((pantalla === "dashboard" || pantalla === "inventario") && token) cargarProductos();
