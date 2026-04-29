@@ -34,40 +34,66 @@ body {
 }
 #auth.active { display: flex; }
 
-.auth-card {
-  width: 100%;
-  max-width: 400px;
-  padding: 42px 32px;
-  background: rgba(5, 46, 22, 0.5);
-  border: 1px solid rgba(34, 197, 94, 0.22);
-  border-radius: 28px;
-  backdrop-filter: blur(18px);
-}
-
-.logo-wrap {
+.auth-outer {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 22px;
+  width: 100%;
+  max-width: 340px;
+  gap: 14px;
 }
-.logo-svg { filter: drop-shadow(0 0 24px rgba(74,222,128,0.5)); }
-.logo-label {
-  margin-top: 10px;
-  font-size: 22px;
-  font-weight: 900;
-  letter-spacing: 10px;
-  background: linear-gradient(to bottom, #4ade80, #14532d);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+
+.auth-logo-area { text-align: center; margin-bottom: 4px; }
+
+.auth-card {
+  width: 100%;
+  padding: 24px 24px 20px;
+  background: rgba(4, 22, 10, 0.88);
+  border: 1px solid rgba(34, 197, 94, 0.28);
+  border-radius: 10px;
+  backdrop-filter: blur(18px);
 }
-.tagline {
+
+.auth-heading {
+  font-size: 20px;
+  font-weight: 300;
+  color: #d1fae5;
   text-align: center;
-  color: #6ee7b7;
-  font-size: 13px;
-  margin-bottom: 24px;
-  opacity: 0.75;
+  margin-bottom: 20px;
+  letter-spacing: 0.2px;
 }
+
+.auth-field { margin-bottom: 14px; }
+.auth-field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #bbf7d0;
+  margin-bottom: 6px;
+}
+
+.auth-register-box {
+  width: 100%;
+  padding: 14px 24px;
+  background: rgba(4, 22, 10, 0.75);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  border-radius: 10px;
+  text-align: center;
+  font-size: 14px;
+  color: #86efac;
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  color: #4ade80;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+.link-btn:hover { color: #86efac; }
 
 /* ══════════════════════════════════════════════
    TOPBAR
@@ -1051,7 +1077,9 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
    MOBILE
 ══════════════════════════════════════════════ */
 @media (max-width: 480px) {
-  .auth-card  { padding: 30px 18px; }
+  .auth-card  { padding: 18px 16px; }
+  .auth-outer { max-width: 100%; }
+  .auth-register-box { padding: 12px 16px; }
   .app-screen { padding: 14px; }
   .card       { padding: 14px; }
   .metric-value { font-size: 20px; }
@@ -1108,32 +1136,67 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
 
 <!-- ═══════════════ AUTH ═══════════════ -->
 <div id="auth" class="screen active">
-  <div class="auth-card">
-    <div class="logo-wrap">
-      <svg class="logo-svg" viewBox="0 0 100 100" width="88" height="88" xmlns="http://www.w3.org/2000/svg">
+  <div class="auth-outer">
+
+    <!-- LOGO -->
+    <div class="auth-logo-area">
+      <svg viewBox="0 0 200 195" width="160" height="156" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <linearGradient id="nGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+          <linearGradient id="grnGrad" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%"   stop-color="#4ade80"/>
-            <stop offset="100%" stop-color="#020617"/>
+            <stop offset="100%" stop-color="#16a34a"/>
           </linearGradient>
-          <linearGradient id="ringGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%"   stop-color="#22c55e"/>
-            <stop offset="100%" stop-color="#052e16"/>
-          </linearGradient>
+          <filter id="lglow" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur stdDeviation="4" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
         </defs>
-        <circle cx="50" cy="50" r="47" fill="rgba(5,46,22,0.88)" stroke="url(#ringGrad)" stroke-width="2"/>
-        <text x="50" y="68" text-anchor="middle" font-family="'Segoe UI',sans-serif" font-weight="900" font-size="60" fill="url(#nGrad)">N</text>
+        <!-- Diamond background -->
+        <polygon points="100,6 192,90 100,174 8,90" fill="#2d2d2d" stroke="#484848" stroke-width="2"/>
+        <!-- Infinity - black body (thick, 3-D base) -->
+        <path d="M100,90 C100,60 140,60 140,90 C140,120 100,120 100,90 C100,60 60,60 60,90 C60,120 100,120 100,90 Z"
+              fill="none" stroke="#111" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+        <!-- Infinity - green highlight (thinner, glowing on top) -->
+        <path d="M100,90 C100,60 140,60 140,90 C140,120 100,120 100,90 C100,60 60,60 60,90 C60,120 100,120 100,90 Z"
+              fill="none" stroke="url(#grnGrad)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" filter="url(#lglow)"/>
+        <!-- Cross-over center highlight (simulates the ribbon twist) -->
+        <ellipse cx="100" cy="90" rx="7" ry="10" fill="#1a1a1a"/>
+        <ellipse cx="100" cy="90" rx="4" ry="6" fill="#22c55e" opacity="0.7"/>
+        <!-- NEXORA -->
+        <text x="100" y="162" text-anchor="middle"
+              font-family="'Segoe UI Black','Arial Black',Impact,sans-serif"
+              font-weight="900" font-size="28" fill="url(#grnGrad)" letter-spacing="2">NEXORA</text>
+        <!-- DESDE 2026 -->
+        <text x="100" y="180" text-anchor="middle"
+              font-family="'Segoe UI',Arial,sans-serif"
+              font-size="9.5" fill="#777" letter-spacing="5.5">DESDE 2026</text>
       </svg>
-      <span class="logo-label">NEXORA</span>
     </div>
-    <p class="tagline">Tu asesor de negocios inteligente</p>
 
-    <input id="username" placeholder="Usuario" autocomplete="username" onkeydown="handleLoginEnter(event)">
-    <input id="password" type="password" placeholder="Contraseña" autocomplete="current-password" onkeydown="handleLoginEnter(event)">
+    <!-- CARD -->
+    <div class="auth-card">
+      <h1 class="auth-heading">Iniciar sesión</h1>
 
-    <button class="action" id="btnLogin" onclick="login()">Iniciar Sesión</button>
-    <button class="action secondary" style="margin-top:8px;" id="btnRegister" onclick="register()">Registrarse</button>
-    <div id="authRespuesta"></div>
+      <div class="auth-field">
+        <label for="username">Usuario</label>
+        <input id="username" autocomplete="username" onkeydown="handleLoginEnter(event)">
+      </div>
+
+      <div class="auth-field">
+        <label for="password">Contraseña</label>
+        <input id="password" type="password" autocomplete="current-password" onkeydown="handleLoginEnter(event)">
+      </div>
+
+      <button class="action" id="btnLogin" onclick="login()">Iniciar Sesión</button>
+      <div id="authRespuesta"></div>
+    </div>
+
+    <!-- REGISTER BOX -->
+    <div class="auth-register-box">
+      ¿No tenés cuenta?
+      <button class="link-btn" id="btnRegister" onclick="register()">Registrarse</button>
+    </div>
+
   </div>
 </div>
 
