@@ -1279,8 +1279,8 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
       <h3>Agregar Producto</h3>
       <input id="producto" placeholder="Nombre del producto">
       <div style="display:grid;grid-template-columns:1fr 110px;gap:10px;">
-        <input id="stock" type="number" min="0" step="0.001" placeholder="Stock inicial">
-        <select id="productoUnidad" class="form-select" style="margin-bottom:10px;">
+        <input id="stock" type="number" min="0" step="0.001" placeholder="Stock inicial" oninput="onStockChange()">
+        <select id="productoUnidad" class="form-select" style="margin-bottom:10px;" onchange="onUnidadChange()">
           <option value="u">u (unidades)</option>
           <option value="kg">kg</option>
           <option value="g">g</option>
@@ -1288,8 +1288,17 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
           <option value="ml">ml</option>
         </select>
       </div>
-      <input id="costo"  type="number" min="0" step="0.01" placeholder="Costo por unidad/kg ($)">
-      <input id="venta"  type="number" min="0" step="0.01" placeholder="Precio de venta por unidad/kg ($)">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div>
+          <div style="font-size:11px;color:#86efac;opacity:0.75;margin-bottom:4px;">Costo por <span id="costoUnidadLabel">u</span> ($)</div>
+          <input id="costo" type="number" min="0" step="0.01" placeholder="0.00" oninput="onCostoUnitChange()">
+        </div>
+        <div>
+          <div style="font-size:11px;color:#86efac;opacity:0.75;margin-bottom:4px;">Costo del lote ($) <span style="opacity:0.55;">÷ stock</span></div>
+          <input id="costoLote" type="number" min="0" step="0.01" placeholder="Ej: 8000 para 25kg" oninput="onCostoLoteChange()">
+        </div>
+      </div>
+      <input id="venta"  type="number" min="0" step="0.01" placeholder="Precio de venta por unidad ($)">
       <button class="action" id="btnAgregar" onclick="agregarProducto()">Agregar</button>
       <div id="respuestaNegocio"></div>
     </div>
@@ -1844,8 +1853,8 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
     <h3>✏️ Editar Producto</h3>
     <input id="editNombre" placeholder="Nombre del producto">
     <div style="display:grid;grid-template-columns:1fr 110px;gap:10px;">
-      <input id="editStock" type="number" min="0" step="0.001" placeholder="Stock">
-      <select id="editUnidad" class="form-select" style="margin-bottom:10px;">
+      <input id="editStock" type="number" min="0" step="0.001" placeholder="Stock" oninput="onEditStockChange()">
+      <select id="editUnidad" class="form-select" style="margin-bottom:10px;" onchange="onEditUnidadChange()">
         <option value="u">u (unidades)</option>
         <option value="kg">kg</option>
         <option value="g">g</option>
@@ -1853,7 +1862,16 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
         <option value="ml">ml</option>
       </select>
     </div>
-    <input id="editCosto"  type="number" min="0" step="0.01" placeholder="Costo ($)">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div>
+        <div style="font-size:11px;color:#86efac;opacity:0.75;margin-bottom:4px;">Costo por <span id="editCostoUnidadLabel">u</span> ($)</div>
+        <input id="editCosto" type="number" min="0" step="0.01" placeholder="0.00" oninput="onEditCostoUnitChange()">
+      </div>
+      <div>
+        <div style="font-size:11px;color:#86efac;opacity:0.75;margin-bottom:4px;">Costo del lote ($) <span style="opacity:0.55;">÷ stock</span></div>
+        <input id="editCostoLote" type="number" min="0" step="0.01" placeholder="Ej: 8000 para 25kg" oninput="onEditCostoLoteChange()">
+      </div>
+    </div>
     <input id="editVenta"  type="number" min="0" step="0.01" placeholder="Precio de venta ($)">
     <div class="modal-actions">
       <button class="action"           onclick="guardarEdicion()">Guardar</button>
@@ -2246,6 +2264,77 @@ function animarEntero(id, valor) {
   requestAnimationFrame(tick);
 }
 
+// ─── COSTO LOTE SYNC (add form) ──────────────────────────────────────────────
+
+function onUnidadChange() {
+  const u = document.getElementById("productoUnidad").value || "u";
+  document.getElementById("costoUnidadLabel").textContent = u;
+}
+
+function onStockChange() {
+  // If lote cost is filled, recalculate unit cost
+  const stock = parseFloat(document.getElementById("stock").value);
+  const lote  = parseFloat(document.getElementById("costoLote").value);
+  if (!isNaN(lote) && lote >= 0 && !isNaN(stock) && stock > 0) {
+    document.getElementById("costo").value = (lote / stock).toFixed(4);
+  }
+}
+
+function onCostoUnitChange() {
+  const stock = parseFloat(document.getElementById("stock").value);
+  const costo = parseFloat(document.getElementById("costo").value);
+  if (!isNaN(stock) && stock > 0 && !isNaN(costo)) {
+    document.getElementById("costoLote").value = (costo * stock).toFixed(2);
+  } else {
+    document.getElementById("costoLote").value = "";
+  }
+}
+
+function onCostoLoteChange() {
+  const stock = parseFloat(document.getElementById("stock").value);
+  const lote  = parseFloat(document.getElementById("costoLote").value);
+  if (!isNaN(stock) && stock > 0 && !isNaN(lote)) {
+    document.getElementById("costo").value = (lote / stock).toFixed(4);
+  } else {
+    document.getElementById("costo").value = "";
+  }
+}
+
+// ─── COSTO LOTE SYNC (edit modal) ────────────────────────────────────────────
+
+function onEditUnidadChange() {
+  const u = document.getElementById("editUnidad").value || "u";
+  document.getElementById("editCostoUnidadLabel").textContent = u;
+}
+
+function onEditStockChange() {
+  const stock = parseFloat(document.getElementById("editStock").value);
+  const lote  = parseFloat(document.getElementById("editCostoLote").value);
+  if (!isNaN(lote) && lote >= 0 && !isNaN(stock) && stock > 0) {
+    document.getElementById("editCosto").value = (lote / stock).toFixed(4);
+  }
+}
+
+function onEditCostoUnitChange() {
+  const stock = parseFloat(document.getElementById("editStock").value);
+  const costo = parseFloat(document.getElementById("editCosto").value);
+  if (!isNaN(stock) && stock > 0 && !isNaN(costo)) {
+    document.getElementById("editCostoLote").value = (costo * stock).toFixed(2);
+  } else {
+    document.getElementById("editCostoLote").value = "";
+  }
+}
+
+function onEditCostoLoteChange() {
+  const stock = parseFloat(document.getElementById("editStock").value);
+  const lote  = parseFloat(document.getElementById("editCostoLote").value);
+  if (!isNaN(stock) && stock > 0 && !isNaN(lote)) {
+    document.getElementById("editCosto").value = (lote / stock).toFixed(4);
+  } else {
+    document.getElementById("editCosto").value = "";
+  }
+}
+
 async function agregarProducto() {
   const producto = document.getElementById("producto").value.trim();
   const stock    = parseFloat(document.getElementById("stock").value);
@@ -2265,8 +2354,9 @@ async function agregarProducto() {
     const json = await res.json();
     if (res.ok) {
       mostrarAlerta("respuestaNegocio", json.respuesta, "info");
-      ["producto","stock","costo","venta"].forEach(id => document.getElementById(id).value = "");
+      ["producto","stock","costo","costoLote","venta"].forEach(id => document.getElementById(id).value = "");
       document.getElementById("productoUnidad").value = "u";
+      document.getElementById("costoUnidadLabel").textContent = "u";
       await cargarProductos();
     } else {
       mostrarAlerta("respuestaNegocio", json.msg, "error");
@@ -2411,16 +2501,20 @@ function abrirEdicion(id) {
   const p = productos.find(x => x.id === id);
   if (!p) return;
   editandoId = id;
-  document.getElementById("editNombre").value = p.producto;
-  document.getElementById("editStock").value  = p.stock;
-  document.getElementById("editCosto").value  = p.costo;
-  document.getElementById("editVenta").value  = p.venta;
-  document.getElementById("editUnidad").value = p.unidad || "u";
+  document.getElementById("editNombre").value     = p.producto;
+  document.getElementById("editStock").value      = p.stock;
+  document.getElementById("editCosto").value      = p.costo;
+  document.getElementById("editVenta").value      = p.venta;
+  const unidad = p.unidad || "u";
+  document.getElementById("editUnidad").value     = unidad;
+  document.getElementById("editCostoUnidadLabel").textContent = unidad;
+  document.getElementById("editCostoLote").value  = p.stock > 0 ? (p.costo * p.stock).toFixed(2) : "";
   limpiarAlerta("respuestaModal");
   document.getElementById("modalEditar").classList.add("open");
 }
 function cerrarModal() {
   editandoId = null;
+  document.getElementById("editCostoLote").value = "";
   document.getElementById("modalEditar").classList.remove("open");
 }
 async function guardarEdicion() {
