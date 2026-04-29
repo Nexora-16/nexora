@@ -17,7 +17,9 @@ def agregar_producto(data):
         stock=data["stock"],
         costo=data["costo"],
         venta=data["venta"],
+        unidad=data.get("unidad", "u"),
         user_id=data["user_id"],
+        sucursal_id=data.get("sucursal_id"),
     )
     db.session.add(nuevo)
     db.session.commit()

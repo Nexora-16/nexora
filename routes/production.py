@@ -18,8 +18,12 @@ def registrar_produccion():
 
     if not product_id:
         return jsonify({"msg": "Producto requerido"}), 400
-    if not isinstance(cantidad, int) or cantidad <= 0:
-        return jsonify({"msg": "La cantidad debe ser un entero positivo"}), 400
+    try:
+        cantidad = float(cantidad)
+    except (TypeError, ValueError):
+        cantidad = None
+    if cantidad is None or cantidad <= 0:
+        return jsonify({"msg": "La cantidad debe ser un número positivo"}), 400
 
     p = Product.query.filter_by(id=product_id, user_id=g.owner_id).first()
     if not p:
@@ -51,16 +55,17 @@ def registrar_produccion():
         )
         p.costo = round(costo, 4)
 
-    p.stock += cantidad
+    p.stock = round((p.stock or 0) + cantidad, 6)
     attrs = scoped_attrs()
-    log = ProductionLog(product_id=p.id, nombre=p.nombre, cantidad=cantidad, **attrs)
+    log = ProductionLog(product_id=p.id, nombre=p.nombre, cantidad=cantidad, unidad=p.unidad or "u", **attrs)
     db.session.add(log)
     db.session.commit()
 
     return jsonify({
-        "msg": "Producción registrada",
+        "msg":        "Producción registrada",
         "stock_nuevo": p.stock,
-        "con_receta": bool(items)
+        "unidad":      p.unidad or "u",
+        "con_receta":  bool(items),
     })
 
 
@@ -72,5 +77,6 @@ def obtener_produccion():
         "id":         l.id,
         "nombre":     l.nombre,
         "cantidad":   l.cantidad,
+        "unidad":     l.unidad or "u",
         "created_at": l.created_at.strftime("%d/%m/%Y %H:%M")
     } for l in logs])

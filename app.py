@@ -111,8 +111,25 @@ try:
             "ALTER TABLE fiado ADD COLUMN IF NOT EXISTS sucursal_id INTEGER",
             "ALTER TABLE client ADD COLUMN IF NOT EXISTS sucursal_id INTEGER",
             "ALTER TABLE production_log ADD COLUMN IF NOT EXISTS sucursal_id INTEGER",
+            "ALTER TABLE production_log ADD COLUMN IF NOT EXISTS unidad VARCHAR(20)",
             "ALTER TABLE product ADD COLUMN IF NOT EXISTS rendimiento FLOAT",
+            "ALTER TABLE product ADD COLUMN IF NOT EXISTS unidad VARCHAR(20) NOT NULL DEFAULT 'u'",
+            "ALTER TABLE sale ADD COLUMN IF NOT EXISTS unidad VARCHAR(20)",
         ]
+        # Type changes (safe: INTEGER fits in FLOAT with no data loss)
+        type_migrations = [
+            "ALTER TABLE product ALTER COLUMN stock TYPE FLOAT USING stock::FLOAT",
+            "ALTER TABLE sale ALTER COLUMN cantidad TYPE FLOAT USING cantidad::FLOAT",
+            "ALTER TABLE production_log ALTER COLUMN cantidad TYPE FLOAT USING cantidad::FLOAT",
+        ]
+        if _db_url.startswith("postgresql://"):
+            for sql in type_migrations:
+                try:
+                    db.session.execute(text(sql))
+                    db.session.commit()
+                except Exception:
+                    db.session.rollback()
+        migrations = migrations + []  # keep existing list separate
         if _db_url.startswith("postgresql://"):
             for sql in migrations:
                 try:

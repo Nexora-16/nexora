@@ -1278,9 +1278,18 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
     <div class="card">
       <h3>Agregar Producto</h3>
       <input id="producto" placeholder="Nombre del producto">
-      <input id="stock"  type="number" min="0"         placeholder="Stock">
-      <input id="costo"  type="number" min="0" step="0.01" placeholder="Costo ($)">
-      <input id="venta"  type="number" min="0" step="0.01" placeholder="Precio de venta ($)">
+      <div style="display:grid;grid-template-columns:1fr 110px;gap:10px;">
+        <input id="stock" type="number" min="0" step="0.001" placeholder="Stock inicial">
+        <select id="productoUnidad" class="form-select" style="margin-bottom:10px;">
+          <option value="u">u (unidades)</option>
+          <option value="kg">kg</option>
+          <option value="g">g</option>
+          <option value="l">l</option>
+          <option value="ml">ml</option>
+        </select>
+      </div>
+      <input id="costo"  type="number" min="0" step="0.01" placeholder="Costo por unidad/kg ($)">
+      <input id="venta"  type="number" min="0" step="0.01" placeholder="Precio de venta por unidad/kg ($)">
       <button class="action" id="btnAgregar" onclick="agregarProducto()">Agregar</button>
       <div id="respuestaNegocio"></div>
     </div>
@@ -1308,6 +1317,7 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
               <th>#</th>
               <th>Producto</th>
               <th>Stock</th>
+              <th>Unidad</th>
               <th>Costo</th>
               <th>Venta</th>
               <th>Margen</th>
@@ -1332,10 +1342,11 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
     <div class="card">
       <h3>Registrar Venta</h3>
       <div class="venta-form">
-        <select id="ventaProducto">
+        <select id="ventaProducto" onchange="onVentaProductoChange()">
           <option value="">Seleccioná un producto...</option>
         </select>
-        <input class="venta-qty" id="ventaCantidad" type="number" min="1" placeholder="Cant." value="1">
+        <input class="venta-qty" id="ventaCantidad" type="number" min="0.001" step="0.001" placeholder="Cant." value="1">
+        <span id="ventaUnidadLabel" style="font-size:13px;color:#86efac;min-width:28px;text-align:center;">u</span>
         <button class="btn-vender" id="btnVender" onclick="registrarVenta()">Registrar</button>
       </div>
       <div id="respuestaVenta"></div>
@@ -1667,7 +1678,7 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
         <option value="">Seleccioná un producto...</option>
       </select>
       <div style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end;">
-        <input id="prodCantidad" type="number" min="1" placeholder="Cantidad a producir" value="1" oninput="renderRequirements()">
+        <input id="prodCantidad" type="number" min="0.001" step="0.001" placeholder="Cantidad a producir" value="1" oninput="renderRequirements()">
         <button class="action" id="btnProducir" onclick="registrarProduccion()" style="width:auto;padding:12px 22px;margin-bottom:10px;">Producir</button>
       </div>
       <div class="prod-requirements" id="prodRequirements"></div>
@@ -1832,7 +1843,16 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
   <div class="modal-box">
     <h3>✏️ Editar Producto</h3>
     <input id="editNombre" placeholder="Nombre del producto">
-    <input id="editStock"  type="number" min="0"         placeholder="Stock">
+    <div style="display:grid;grid-template-columns:1fr 110px;gap:10px;">
+      <input id="editStock" type="number" min="0" step="0.001" placeholder="Stock">
+      <select id="editUnidad" class="form-select" style="margin-bottom:10px;">
+        <option value="u">u (unidades)</option>
+        <option value="kg">kg</option>
+        <option value="g">g</option>
+        <option value="l">l</option>
+        <option value="ml">ml</option>
+      </select>
+    </div>
     <input id="editCosto"  type="number" min="0" step="0.01" placeholder="Costo ($)">
     <input id="editVenta"  type="number" min="0" step="0.01" placeholder="Precio de venta ($)">
     <div class="modal-actions">
@@ -2161,12 +2181,15 @@ function renderInventario() {
     const gan    = (p.venta - p.costo) * p.stock;
     totalStock  += p.stock;
     totalGan    += gan;
-    const mCls = margen >= 0 ? "td-green" : "td-red";
-    const gCls = gan    >= 0 ? "td-green" : "td-red";
+    const mCls   = margen >= 0 ? "td-green" : "td-red";
+    const gCls   = gan    >= 0 ? "td-green" : "td-red";
+    const unidad = p.unidad || "u";
+    const stockFmt = Number.isInteger(p.stock) ? p.stock : parseFloat(p.stock.toFixed(3));
     return `<tr>
       <td class="td-num" style="color:#6ee7b7;opacity:0.55;">${i + 1}</td>
       <td class="td-name">${escHtml(p.producto)}</td>
-      <td class="td-num" ${p.stock <= STOCK_BAJO_UMBRAL ? 'style="color:#fbbf24;font-weight:700;" title="Stock bajo"' : ""}>${p.stock}${p.stock <= STOCK_BAJO_UMBRAL ? " ⚠️" : ""}</td>
+      <td class="td-num" ${p.stock <= STOCK_BAJO_UMBRAL ? 'style="color:#fbbf24;font-weight:700;" title="Stock bajo"' : ""}>${stockFmt}${p.stock <= STOCK_BAJO_UMBRAL ? " ⚠️" : ""}</td>
+      <td class="td-num" style="color:#6ee7b7;opacity:0.7;">${unidad}</td>
       <td class="td-num">$${p.costo.toFixed(2)}</td>
       <td class="td-num">$${p.venta.toFixed(2)}</td>
       <td class="td-num ${mCls}">${margen >= 0 ? "+" : ""}${margen.toFixed(1)}%</td>
@@ -2184,7 +2207,8 @@ function renderInventario() {
   const ganCls = totalGan >= 0 ? "td-green" : "td-red";
   foot.innerHTML = `<tr class="inv-summary">
     <td colspan="2" class="sum-label">Totales</td>
-    <td class="td-num">${totalStock} uds.</td>
+    <td class="td-num">${parseFloat(totalStock.toFixed(3))}</td>
+    <td></td>
     <td colspan="2"></td>
     <td></td>
     <td class="td-num ${ganCls}">$${totalGan.toLocaleString("es-AR", {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
@@ -2224,23 +2248,25 @@ function animarEntero(id, valor) {
 
 async function agregarProducto() {
   const producto = document.getElementById("producto").value.trim();
-  const stock    = parseInt(document.getElementById("stock").value);
+  const stock    = parseFloat(document.getElementById("stock").value);
   const costo    = parseFloat(document.getElementById("costo").value);
   const venta    = parseFloat(document.getElementById("venta").value);
+  const unidad   = document.getElementById("productoUnidad").value || "u";
 
   if (!producto)               { mostrarAlerta("respuestaNegocio", "El nombre del producto es requerido.", "error"); return; }
-  if (isNaN(stock)||stock<0)   { mostrarAlerta("respuestaNegocio", "El stock debe ser un número entero no negativo.", "error"); return; }
+  if (isNaN(stock)||stock<0)   { mostrarAlerta("respuestaNegocio", "El stock debe ser un número no negativo.", "error"); return; }
   if (isNaN(costo)||costo<0)   { mostrarAlerta("respuestaNegocio", "El costo debe ser un número no negativo.", "error"); return; }
   if (isNaN(venta)||venta<0)   { mostrarAlerta("respuestaNegocio", "El precio de venta debe ser un número no negativo.", "error"); return; }
 
   setLoading("btnAgregar", true);
   try {
-    const res  = await fetch(`${API}/api/business`, { method: "POST", headers: authHeaders(), body: JSON.stringify({ producto, stock, costo, venta }) });
+    const res  = await fetch(`${API}/api/business`, { method: "POST", headers: authHeaders(), body: JSON.stringify({ producto, stock, costo, venta, unidad }) });
     if (res.status === 401) { handleUnauthorized(); return; }
     const json = await res.json();
     if (res.ok) {
       mostrarAlerta("respuestaNegocio", json.respuesta, "info");
       ["producto","stock","costo","venta"].forEach(id => document.getElementById(id).value = "");
+      document.getElementById("productoUnidad").value = "u";
       await cargarProductos();
     } else {
       mostrarAlerta("respuestaNegocio", json.msg, "error");
@@ -2389,6 +2415,7 @@ function abrirEdicion(id) {
   document.getElementById("editStock").value  = p.stock;
   document.getElementById("editCosto").value  = p.costo;
   document.getElementById("editVenta").value  = p.venta;
+  document.getElementById("editUnidad").value = p.unidad || "u";
   limpiarAlerta("respuestaModal");
   document.getElementById("modalEditar").classList.add("open");
 }
@@ -2398,15 +2425,16 @@ function cerrarModal() {
 }
 async function guardarEdicion() {
   const nombre = document.getElementById("editNombre").value.trim();
-  const stock  = parseInt(document.getElementById("editStock").value);
+  const stock  = parseFloat(document.getElementById("editStock").value);
   const costo  = parseFloat(document.getElementById("editCosto").value);
   const venta  = parseFloat(document.getElementById("editVenta").value);
+  const unidad = document.getElementById("editUnidad").value || "u";
   if (!nombre)               { mostrarAlerta("respuestaModal","El nombre es requerido.","error"); return; }
   if (isNaN(stock)||stock<0) { mostrarAlerta("respuestaModal","Stock inválido.","error"); return; }
   if (isNaN(costo)||costo<0) { mostrarAlerta("respuestaModal","Costo inválido.","error"); return; }
   if (isNaN(venta)||venta<0) { mostrarAlerta("respuestaModal","Precio de venta inválido.","error"); return; }
   try {
-    const res = await fetch(`${API}/api/productos/${editandoId}`, { method:"PUT", headers:authHeaders(), body:JSON.stringify({producto:nombre,stock,costo,venta}) });
+    const res = await fetch(`${API}/api/productos/${editandoId}`, { method:"PUT", headers:authHeaders(), body:JSON.stringify({producto:nombre,stock,costo,venta,unidad}) });
     if (res.status===401) { handleUnauthorized(); return; }
     if (res.ok) { cerrarModal(); await cargarProductos(); }
     else { const j = await res.json(); mostrarAlerta("respuestaModal",j.msg,"error"); }
@@ -2640,7 +2668,7 @@ function poblarSelectProduccion() {
   if (!sel) return;
   const cur = sel.value;
   sel.innerHTML = '<option value="">Seleccioná un producto...</option>' +
-    productos.map(p => `<option value="${p.id}">${escHtml(p.producto)} (stock: ${p.stock})</option>`).join("");
+    productos.map(p => `<option value="${p.id}">${escHtml(p.producto)} (stock: ${formatNum(p.stock)} ${p.unidad || 'u'})</option>`).join("");
   if (cur) sel.value = cur;
 }
 
@@ -2663,7 +2691,7 @@ async function onProdProductoChange() {
 
 function renderRequirements() {
   const req      = document.getElementById("prodRequirements");
-  const cantidad = parseInt(document.getElementById("prodCantidad").value) || 1;
+  const cantidad = parseFloat(document.getElementById("prodCantidad").value) || 1;
   req.style.display = "block";
 
   if (produccionReceta.length === 0) {
@@ -2671,13 +2699,17 @@ function renderRequirements() {
     return;
   }
 
+  const selProd = document.getElementById("prodProducto");
+  const prodOpt = selProd && selProd.options[selProd.selectedIndex];
+  const prodObj = prodOpt ? productos.find(p => p.id === parseInt(prodOpt.value)) : null;
+  const prodUnidad = prodObj ? (prodObj.unidad || "u") : "u";
   const lotes = (cantidad / produccionRendimiento).toFixed(2);
   req.innerHTML =
     `<div style="font-size:12px;color:#86efac;margin-bottom:8px;opacity:0.8;">
-      Rendimiento por lote: <strong>${produccionRendimiento}</strong> unidades/kg
-      &nbsp;·&nbsp; ${cantidad} unidades = <strong>${lotes} lote${parseFloat(lotes)!==1?"s":""}</strong>
+      Rendimiento por lote: <strong>${produccionRendimiento} ${prodUnidad}</strong>
+      &nbsp;·&nbsp; ${formatNum(cantidad)} ${prodUnidad} = <strong>${lotes} lote${parseFloat(lotes)!==1?"s":""}</strong>
     </div>` +
-    `<div class="prod-req-title">Insumos necesarios para producir ${cantidad} unidad${cantidad!==1?"es":""}:</div>` +
+    `<div class="prod-req-title">Insumos necesarios para producir ${formatNum(cantidad)} ${prodUnidad}:</div>` +
     produccionReceta.map(item => {
       const necesario = item.cantidad * cantidad;
       const ok        = item.insumo_stock >= necesario;
@@ -2693,17 +2725,17 @@ function renderRequirements() {
 
 async function registrarProduccion() {
   const productId = parseInt(document.getElementById("prodProducto").value);
-  const cantidad  = parseInt(document.getElementById("prodCantidad").value);
+  const cantidad  = parseFloat(document.getElementById("prodCantidad").value);
   limpiarAlerta("respuestaProduccion");
-  if (!productId)                  { mostrarAlerta("respuestaProduccion","Seleccioná un producto.","error"); return; }
-  if (isNaN(cantidad)||cantidad<1) { mostrarAlerta("respuestaProduccion","La cantidad debe ser al menos 1.","error"); return; }
+  if (!productId)                   { mostrarAlerta("respuestaProduccion","Seleccioná un producto.","error"); return; }
+  if (isNaN(cantidad)||cantidad<=0) { mostrarAlerta("respuestaProduccion","La cantidad debe ser un número positivo.","error"); return; }
   setLoading("btnProducir", true);
   try {
     const res  = await fetch(`${API}/api/produccion`, { method:"POST", headers:authHeaders(), body:JSON.stringify({product_id:productId,cantidad}) });
     if (res.status===401) { handleUnauthorized(); return; }
     const json = await res.json();
     if (res.ok) {
-      mostrarAlerta("respuestaProduccion", `✓ ${json.msg}. Stock nuevo: ${json.stock_nuevo}` + (json.con_receta ? "" : " (sin receta)"), "success");
+      mostrarAlerta("respuestaProduccion", `✓ ${json.msg}. Stock nuevo: ${formatNum(json.stock_nuevo)} ${json.unidad || 'u'}` + (json.con_receta ? "" : " (sin receta)"), "success");
       document.getElementById("prodCantidad").value = 1;
       produccionReceta = [];
       document.getElementById("prodRequirements").style.display = "none";
@@ -2740,7 +2772,7 @@ function renderProduccion() {
   body.innerHTML = produccionHistory.map(l => `<tr>
     <td style="color:#6ee7b7;opacity:0.7;font-size:12px;">${l.created_at}</td>
     <td class="td-name">${escHtml(l.nombre)}</td>
-    <td class="td-num td-green">${l.cantidad} uds.</td>
+    <td class="td-num td-green">${formatNum(l.cantidad)} ${l.unidad || 'u'}</td>
   </tr>`).join("");
 }
 
@@ -2753,8 +2785,17 @@ function poblarSelectProductos() {
   const sel = document.getElementById("ventaProducto");
   const cur = sel.value;
   sel.innerHTML = '<option value="">Seleccioná un producto...</option>' +
-    productos.map(p => `<option value="${p.id}">${escHtml(p.producto)} (stock: ${p.stock})</option>`).join("");
+    productos.map(p => `<option value="${p.id}" data-unidad="${p.unidad||'u'}">${escHtml(p.producto)} (stock: ${formatNum(p.stock)} ${p.unidad||'u'})</option>`).join("");
   if (cur) sel.value = cur;
+  onVentaProductoChange();
+}
+
+function onVentaProductoChange() {
+  const sel = document.getElementById("ventaProducto");
+  const lbl = document.getElementById("ventaUnidadLabel");
+  if (!sel || !lbl) return;
+  const opt = sel.options[sel.selectedIndex];
+  lbl.textContent = (opt && opt.dataset.unidad) ? opt.dataset.unidad : "u";
 }
 
 async function cargarVentas() {
@@ -2769,10 +2810,10 @@ async function cargarVentas() {
 
 async function registrarVenta() {
   const productId = parseInt(document.getElementById("ventaProducto").value);
-  const cantidad  = parseInt(document.getElementById("ventaCantidad").value);
+  const cantidad  = parseFloat(document.getElementById("ventaCantidad").value);
   limpiarAlerta("respuestaVenta");
   if (!productId) { mostrarAlerta("respuestaVenta", "Seleccioná un producto.", "error"); return; }
-  if (isNaN(cantidad) || cantidad <= 0) { mostrarAlerta("respuestaVenta", "La cantidad debe ser al menos 1.", "error"); return; }
+  if (isNaN(cantidad) || cantidad <= 0) { mostrarAlerta("respuestaVenta", "La cantidad debe ser un número positivo.", "error"); return; }
 
   setLoading("btnVender", true);
   try {
@@ -2780,7 +2821,9 @@ async function registrarVenta() {
     if (res.status === 401) { handleUnauthorized(); return; }
     const json = await res.json();
     if (res.ok) {
-      mostrarAlerta("respuestaVenta", `✓ ${json.msg}. Stock restante: ${json.stock_restante}`, "success");
+      const lbl = document.getElementById("ventaUnidadLabel");
+      const unidad = lbl ? lbl.textContent : "u";
+      mostrarAlerta("respuestaVenta", `✓ ${json.msg}. Stock restante: ${formatNum(json.stock_restante)} ${unidad}`, "success");
       document.getElementById("ventaCantidad").value = 1;
       await Promise.all([cargarVentas(), cargarProductos()]);
     } else {
@@ -2819,7 +2862,7 @@ function renderVentas() {
     return `<tr>
       <td style="color:#6ee7b7;opacity:0.7;font-size:12px;">${v.created_at}</td>
       <td class="td-name">${escHtml(v.nombre)}</td>
-      <td class="td-num">${v.cantidad}</td>
+      <td class="td-num">${formatNum(v.cantidad)} ${v.unidad || 'u'}</td>
       <td class="td-num">$${v.precio.toFixed(2)}</td>
       <td class="td-num" style="color:#6ee7b7;opacity:0.8;">$${v.costo.toFixed(2)}</td>
       <td class="td-num ${gCls}">$${v.ganancia.toLocaleString("es-AR", {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
@@ -2829,7 +2872,7 @@ function renderVentas() {
   const gCls = totalGanancia >= 0 ? "td-green" : "td-red";
   foot.innerHTML = `<tr class="inv-summary">
     <td colspan="2" class="sum-label">Totales</td>
-    <td class="td-num">${totalQty} uds.</td>
+    <td class="td-num">${formatNum(totalQty)}</td>
     <td class="td-num">$${totalIngresos.toLocaleString("es-AR", {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
     <td></td>
     <td class="td-num ${gCls}">$${totalGanancia.toLocaleString("es-AR", {minimumFractionDigits:2, maximumFractionDigits:2})}</td>

@@ -16,19 +16,23 @@ def registrar_venta():
 
     if not product_id:
         return jsonify({"msg": "Producto requerido"}), 400
-    if not isinstance(cantidad, int) or cantidad <= 0:
-        return jsonify({"msg": "La cantidad debe ser un entero positivo"}), 400
+    try:
+        cantidad = float(cantidad)
+    except (TypeError, ValueError):
+        cantidad = None
+    if cantidad is None or cantidad <= 0:
+        return jsonify({"msg": "La cantidad debe ser un número positivo"}), 400
 
     p = Product.query.filter_by(id=product_id, user_id=g.owner_id).first()
     if not p:
         return jsonify({"msg": "Producto no encontrado"}), 404
     if p.stock < cantidad:
-        return jsonify({"msg": f"Stock insuficiente. Disponible: {p.stock}"}), 400
+        return jsonify({"msg": f"Stock insuficiente. Disponible: {p.stock} {p.unidad or 'u'}"}), 400
 
-    p.stock -= cantidad
+    p.stock = round(p.stock - cantidad, 6)
     attrs = scoped_attrs()
     sale = Sale(product_id=p.id, nombre=p.nombre, cantidad=cantidad,
-                precio=p.venta, costo=p.costo, **attrs)
+                precio=p.venta, costo=p.costo, unidad=p.unidad or "u", **attrs)
     db.session.add(sale)
     db.session.commit()
 
@@ -43,6 +47,7 @@ def obtener_ventas():
         "id":         v.id,
         "nombre":     v.nombre,
         "cantidad":   v.cantidad,
+        "unidad":     v.unidad or "u",
         "precio":     v.precio,
         "costo":      v.costo,
         "ganancia":   round((v.precio - v.costo) * v.cantidad, 2),

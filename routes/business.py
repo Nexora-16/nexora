@@ -7,6 +7,8 @@ from utils.auth_utils import require_auth, require_admin, scoped_query, scoped_a
 
 business_bp = Blueprint("business", __name__)
 
+UNIDADES_VALIDAS = {"kg", "g", "l", "ml", "u"}
+
 
 @business_bp.route("/business", methods=["POST"])
 @require_auth
@@ -15,24 +17,28 @@ def business():
     data = request.get_json(silent=True) or {}
 
     producto = (data.get("producto") or "").strip()
-    stock = data.get("stock")
-    costo = data.get("costo")
-    venta = data.get("venta")
+    stock    = data.get("stock")
+    costo    = data.get("costo")
+    venta    = data.get("venta")
+    unidad   = (data.get("unidad") or "u").strip()
 
     if not producto:
         return jsonify({"msg": "El nombre del producto es requerido"}), 400
-    if stock is None or not isinstance(stock, int) or stock < 0:
-        return jsonify({"msg": "El stock debe ser un número entero no negativo"}), 400
+    if stock is None or float(stock) < 0:
+        return jsonify({"msg": "El stock debe ser un número no negativo"}), 400
     if costo is None or float(costo) < 0:
         return jsonify({"msg": "El costo debe ser un número no negativo"}), 400
     if venta is None or float(venta) < 0:
         return jsonify({"msg": "El precio de venta debe ser un número no negativo"}), 400
+    if unidad not in UNIDADES_VALIDAS:
+        unidad = "u"
 
-    costo = float(costo)
-    venta = float(venta)
+    costo  = float(costo)
+    venta  = float(venta)
+    stock  = float(stock)
+    attrs  = scoped_attrs()
 
-    attrs = scoped_attrs()
-    agregar_producto({"producto": producto, "stock": stock, "costo": costo, "venta": venta, **attrs})
+    agregar_producto({"producto": producto, "stock": stock, "costo": costo, "venta": venta, "unidad": unidad, **attrs})
     respuesta = analizar_negocio(producto, stock, costo, venta, g.owner_id)
 
     return jsonify({"respuesta": respuesta})
@@ -43,7 +49,7 @@ def business():
 def obtener_productos():
     productos = scoped_query(Product).all()
     return jsonify([
-        {"id": p.id, "producto": p.nombre, "stock": p.stock, "costo": p.costo, "venta": p.venta}
+        {"id": p.id, "producto": p.nombre, "stock": p.stock, "costo": p.costo, "venta": p.venta, "unidad": p.unidad or "u"}
         for p in productos
     ])
 
@@ -56,25 +62,29 @@ def editar_producto(product_id):
     if not p:
         return jsonify({"msg": "Producto no encontrado"}), 404
 
-    data = request.get_json(silent=True) or {}
+    data   = request.get_json(silent=True) or {}
     nombre = (data.get("producto") or "").strip()
     stock  = data.get("stock")
     costo  = data.get("costo")
     venta  = data.get("venta")
+    unidad = (data.get("unidad") or "u").strip()
 
     if not nombre:
         return jsonify({"msg": "El nombre del producto es requerido"}), 400
-    if stock is None or not isinstance(stock, int) or stock < 0:
-        return jsonify({"msg": "El stock debe ser un número entero no negativo"}), 400
+    if stock is None or float(stock) < 0:
+        return jsonify({"msg": "El stock debe ser un número no negativo"}), 400
     if costo is None or float(costo) < 0:
         return jsonify({"msg": "El costo debe ser un número no negativo"}), 400
     if venta is None or float(venta) < 0:
         return jsonify({"msg": "El precio de venta debe ser un número no negativo"}), 400
+    if unidad not in UNIDADES_VALIDAS:
+        unidad = "u"
 
-    p.nombre = nombre
-    p.stock  = stock
-    p.costo  = float(costo)
-    p.venta  = float(venta)
+    p.nombre  = nombre
+    p.stock   = float(stock)
+    p.costo   = float(costo)
+    p.venta   = float(venta)
+    p.unidad  = unidad
     db.session.commit()
 
     return jsonify({"msg": "Producto actualizado"})
@@ -87,8 +97,6 @@ def eliminar_producto(product_id):
     p = Product.query.filter_by(id=product_id, user_id=g.owner_id).first()
     if not p:
         return jsonify({"msg": "Producto no encontrado"}), 404
-
     db.session.delete(p)
     db.session.commit()
-
     return jsonify({"msg": "Producto eliminado"})
