@@ -18,6 +18,7 @@ try:
     app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "nexora-dev-secret-key-change-in-production")
 
     _db_url = os.environ.get("DATABASE_URL", "sqlite:///" + os.path.join(basedir, "instance", "nexora.db"))
+    _db_url = _db_url.lstrip('﻿').strip()  # strip BOM and whitespace (PowerShell echo artifact)
     if _db_url.startswith("postgres://"):
         _db_url = _db_url.replace("postgres://", "postgresql://", 1)
     if _db_url.startswith("postgresql://") and "sslmode" not in _db_url:

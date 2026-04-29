@@ -1,15 +1,21 @@
+import sys
 import os
+import traceback
 
-db_url = os.environ.get("DATABASE_URL", "NOT_SET")
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-lines = [
-    f"length: {len(db_url)}",
-    f"repr: {repr(db_url[:80])}",
-    f"hex: {db_url[:10].encode('utf-8', errors='replace').hex()}",
-]
+_import_error = None
+app = None
 
+try:
+    from app import app
+except Exception as e:
+    _import_error = f"{type(e).__name__}: {e}\n\n{traceback.format_exc()}"
 
-def app(environ, start_response):
-    body = "\n".join(lines).encode()
-    start_response("200 OK", [("Content-Type", "text/plain"), ("Content-Length", str(len(body)))])
-    return [body]
+    def app(environ, start_response):
+        body = f"Boot error: {_import_error}".encode()
+        start_response("500 Internal Server Error", [
+            ("Content-Type", "text/plain"),
+            ("Content-Length", str(len(body))),
+        ])
+        return [body]
