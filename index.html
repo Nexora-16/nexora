@@ -1625,16 +1625,25 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
     <div class="card">
       <h3>Agregar Insumo</h3>
       <input id="insNombre" placeholder="Nombre (ej: Harina, Manteca, Huevos)">
-      <div style="display:grid;grid-template-columns:1fr 120px 1fr;gap:10px;">
-        <input id="insStock" type="number" min="0" step="0.001" placeholder="Stock inicial">
-        <select id="insUnidad" class="form-select" style="margin-bottom:10px;">
+      <div style="display:grid;grid-template-columns:1fr 120px;gap:10px;">
+        <input id="insStock" type="number" min="0" step="0.001" placeholder="Stock inicial" oninput="onInsStockChange()">
+        <select id="insUnidad" class="form-select" style="margin-bottom:10px;" onchange="onInsUnidadChange()">
           <option value="kg">kg</option>
           <option value="g">g</option>
           <option value="l">l</option>
           <option value="ml">ml</option>
           <option value="u">u</option>
         </select>
-        <input id="insCosto" type="number" min="0" step="0.01" placeholder="Costo por unidad ($)">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div>
+          <div style="font-size:11px;color:#86efac;opacity:0.75;margin-bottom:4px;">Costo por <span id="insCostoUnidadLabel">kg</span> ($)</div>
+          <input id="insCosto" type="number" min="0" step="0.01" placeholder="0.00" oninput="onInsCostoUnitChange()">
+        </div>
+        <div>
+          <div style="font-size:11px;color:#86efac;opacity:0.75;margin-bottom:4px;">Costo de la compra ($) <span style="opacity:0.55;">÷ stock</span></div>
+          <input id="insCompra" type="number" min="0" step="0.01" placeholder="Ej: 5000 por 25kg" oninput="onInsCompraChange()">
+        </div>
       </div>
       <button class="action" id="btnAgregarInsumo" onclick="agregarInsumo()">Agregar Insumo</button>
       <div id="respuestaInsumo"></div>
@@ -1744,16 +1753,25 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
   <div class="modal-box">
     <h3>✏️ Editar Insumo</h3>
     <input id="editInsNombre" placeholder="Nombre del insumo">
-    <div style="display:grid;grid-template-columns:1fr 120px 1fr;gap:10px;">
-      <input id="editInsStock" type="number" min="0" step="0.001" placeholder="Stock">
-      <select id="editInsUnidad" class="form-select" style="margin-bottom:10px;">
+    <div style="display:grid;grid-template-columns:1fr 120px;gap:10px;">
+      <input id="editInsStock" type="number" min="0" step="0.001" placeholder="Stock" oninput="onEditInsStockChange()">
+      <select id="editInsUnidad" class="form-select" style="margin-bottom:10px;" onchange="onEditInsUnidadChange()">
         <option value="kg">kg</option>
         <option value="g">g</option>
         <option value="l">l</option>
         <option value="ml">ml</option>
         <option value="u">u</option>
       </select>
-      <input id="editInsCosto" type="number" min="0" step="0.01" placeholder="Costo / unidad ($)">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div>
+        <div style="font-size:11px;color:#86efac;opacity:0.75;margin-bottom:4px;">Costo por <span id="editInsCostoUnidadLabel">kg</span> ($)</div>
+        <input id="editInsCosto" type="number" min="0" step="0.01" placeholder="0.00" oninput="onEditInsCostoUnitChange()">
+      </div>
+      <div>
+        <div style="font-size:11px;color:#86efac;opacity:0.75;margin-bottom:4px;">Costo de la compra ($) <span style="opacity:0.55;">÷ stock</span></div>
+        <input id="editInsCompra" type="number" min="0" step="0.01" placeholder="Ej: 5000 por 25kg" oninput="onEditInsCompraChange()">
+      </div>
     </div>
     <div class="modal-actions">
       <button class="action"           onclick="guardarEdicionInsumo()">Guardar</button>
@@ -2594,6 +2612,76 @@ function formatNum(n) {
   return Number.isInteger(n) ? n : parseFloat(n.toFixed(3)).toString();
 }
 
+// ─── COSTO COMPRA SYNC (insumos add) ─────────────────────────────────────────
+
+function onInsUnidadChange() {
+  const u = document.getElementById("insUnidad").value || "kg";
+  document.getElementById("insCostoUnidadLabel").textContent = u;
+}
+
+function onInsStockChange() {
+  const stock   = parseFloat(document.getElementById("insStock").value);
+  const compra  = parseFloat(document.getElementById("insCompra").value);
+  if (!isNaN(compra) && compra >= 0 && !isNaN(stock) && stock > 0) {
+    document.getElementById("insCosto").value = (compra / stock).toFixed(4);
+  }
+}
+
+function onInsCostoUnitChange() {
+  const stock  = parseFloat(document.getElementById("insStock").value);
+  const costo  = parseFloat(document.getElementById("insCosto").value);
+  if (!isNaN(stock) && stock > 0 && !isNaN(costo)) {
+    document.getElementById("insCompra").value = (costo * stock).toFixed(2);
+  } else {
+    document.getElementById("insCompra").value = "";
+  }
+}
+
+function onInsCompraChange() {
+  const stock  = parseFloat(document.getElementById("insStock").value);
+  const compra = parseFloat(document.getElementById("insCompra").value);
+  if (!isNaN(stock) && stock > 0 && !isNaN(compra)) {
+    document.getElementById("insCosto").value = (compra / stock).toFixed(4);
+  } else {
+    document.getElementById("insCosto").value = "";
+  }
+}
+
+// ─── COSTO COMPRA SYNC (insumos edit) ────────────────────────────────────────
+
+function onEditInsUnidadChange() {
+  const u = document.getElementById("editInsUnidad").value || "kg";
+  document.getElementById("editInsCostoUnidadLabel").textContent = u;
+}
+
+function onEditInsStockChange() {
+  const stock  = parseFloat(document.getElementById("editInsStock").value);
+  const compra = parseFloat(document.getElementById("editInsCompra").value);
+  if (!isNaN(compra) && compra >= 0 && !isNaN(stock) && stock > 0) {
+    document.getElementById("editInsCosto").value = (compra / stock).toFixed(4);
+  }
+}
+
+function onEditInsCostoUnitChange() {
+  const stock = parseFloat(document.getElementById("editInsStock").value);
+  const costo = parseFloat(document.getElementById("editInsCosto").value);
+  if (!isNaN(stock) && stock > 0 && !isNaN(costo)) {
+    document.getElementById("editInsCompra").value = (costo * stock).toFixed(2);
+  } else {
+    document.getElementById("editInsCompra").value = "";
+  }
+}
+
+function onEditInsCompraChange() {
+  const stock  = parseFloat(document.getElementById("editInsStock").value);
+  const compra = parseFloat(document.getElementById("editInsCompra").value);
+  if (!isNaN(stock) && stock > 0 && !isNaN(compra)) {
+    document.getElementById("editInsCosto").value = (compra / stock).toFixed(4);
+  } else {
+    document.getElementById("editInsCosto").value = "";
+  }
+}
+
 async function agregarInsumo() {
   const nombre = document.getElementById("insNombre").value.trim();
   const stock  = parseFloat(document.getElementById("insStock").value);
@@ -2610,7 +2698,7 @@ async function agregarInsumo() {
     const json = await res.json();
     if (res.ok) {
       mostrarAlerta("respuestaInsumo","✓ " + json.msg,"success");
-      ["insNombre","insStock","insCosto"].forEach(id => document.getElementById(id).value="");
+      ["insNombre","insStock","insCosto","insCompra"].forEach(id => document.getElementById(id).value="");
       await cargarInsumos();
     } else { mostrarAlerta("respuestaInsumo",json.msg,"error"); }
   } catch { mostrarAlerta("respuestaInsumo","Error de conexión.","error"); }
@@ -2624,13 +2712,16 @@ function abrirEditInsumo(id) {
   document.getElementById("editInsNombre").value = ins.nombre;
   document.getElementById("editInsStock").value  = ins.stock;
   document.getElementById("editInsUnidad").value = ins.unidad;
+  document.getElementById("editInsCostoUnidadLabel").textContent = ins.unidad || "kg";
   document.getElementById("editInsCosto").value  = ins.costo_unitario;
+  document.getElementById("editInsCompra").value = ins.stock > 0 ? (ins.costo_unitario * ins.stock).toFixed(2) : "";
   limpiarAlerta("respuestaModalInsumo");
   document.getElementById("modalEditInsumo").classList.add("open");
 }
 
 function cerrarModalInsumo() {
   editandoInsumoId = null;
+  document.getElementById("editInsCompra").value = "";
   document.getElementById("modalEditInsumo").classList.remove("open");
 }
 
@@ -2829,7 +2920,10 @@ async function registrarProduccion() {
     if (res.status===401) { handleUnauthorized(); return; }
     const json = await res.json();
     if (res.ok) {
-      mostrarAlerta("respuestaProduccion", `✓ ${json.msg}. Stock nuevo: ${formatNum(json.stock_nuevo)} ${json.unidad || 'u'}` + (json.con_receta ? "" : " (sin receta)"), "success");
+      const costoMsg = (json.con_receta && json.costo_calculado != null)
+        ? ` · Costo/kg: $${parseFloat(json.costo_calculado).toFixed(2)}`
+        : (json.con_receta ? "" : " (sin receta)");
+      mostrarAlerta("respuestaProduccion", `✓ ${json.msg}. Stock: ${formatNum(json.stock_nuevo)} ${json.unidad || 'u'}${costoMsg}`, "success");
       document.getElementById("prodCantidad").value = 1;
       produccionReceta = [];
       document.getElementById("prodRequirements").style.display = "none";

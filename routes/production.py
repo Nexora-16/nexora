@@ -62,10 +62,11 @@ def registrar_produccion():
     db.session.commit()
 
     return jsonify({
-        "msg":        "Producción registrada",
-        "stock_nuevo": p.stock,
-        "unidad":      p.unidad or "u",
-        "con_receta":  bool(items),
+        "msg":             "Producción registrada",
+        "stock_nuevo":     p.stock,
+        "unidad":          p.unidad or "u",
+        "con_receta":      bool(items),
+        "costo_calculado": p.costo,
     })
 
 
