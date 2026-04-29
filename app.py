@@ -111,6 +111,7 @@ try:
             "ALTER TABLE fiado ADD COLUMN IF NOT EXISTS sucursal_id INTEGER",
             "ALTER TABLE client ADD COLUMN IF NOT EXISTS sucursal_id INTEGER",
             "ALTER TABLE production_log ADD COLUMN IF NOT EXISTS sucursal_id INTEGER",
+            "ALTER TABLE product ADD COLUMN IF NOT EXISTS rendimiento FLOAT",
         ]
         if _db_url.startswith("postgresql://"):
             for sql in migrations:

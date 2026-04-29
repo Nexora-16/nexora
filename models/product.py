@@ -9,3 +9,4 @@ class Product(db.Model):
     venta       = db.Column(db.Float)
     user_id     = db.Column(db.Integer)
     sucursal_id = db.Column(db.Integer, nullable=True)
+    rendimiento = db.Column(db.Float, nullable=True)  # kg/units per full batch
