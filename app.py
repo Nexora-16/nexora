@@ -61,8 +61,9 @@ recipes_bp    = _safe_import("routes.recipes",     "recipes_bp")
 production_bp = _safe_import("routes.production",  "production_bp")
 clients_bp    = _safe_import("routes.clients",     "clients_bp")
 pedidos_bp    = _safe_import("routes.pedidos",     "pedidos_bp")
-gastos_bp     = _safe_import("routes.gastos",      "gastos_bp")
-fiado_bp      = _safe_import("routes.fiado",       "fiado_bp")
+gastos_bp      = _safe_import("routes.gastos",       "gastos_bp")
+fiado_bp       = _safe_import("routes.fiado",        "fiado_bp")
+sucursales_bp  = _safe_import("routes.sucursales",   "sucursales_bp")
 
 app.register_blueprint(auth_bp,       url_prefix="/api")
 app.register_blueprint(business_bp,   url_prefix="/api")
@@ -76,6 +77,7 @@ app.register_blueprint(clients_bp,    url_prefix="/api")
 app.register_blueprint(pedidos_bp,    url_prefix="/api")
 app.register_blueprint(gastos_bp,     url_prefix="/api")
 app.register_blueprint(fiado_bp,      url_prefix="/api")
+app.register_blueprint(sucursales_bp, url_prefix="/api")
 
 try:
     with app.app_context():
@@ -90,9 +92,34 @@ try:
         from models.pedido import Pedido
         from models.gasto import Gasto
         from models.fiado import Fiado
+        from models.sucursal import Sucursal
         if _db_url.startswith("sqlite"):
             os.makedirs("instance", exist_ok=True)
         db.create_all()
+
+        # Migrations: add new columns to existing tables (safe to re-run)
+        from sqlalchemy import text
+        migrations = [
+            "ALTER TABLE usuario ADD COLUMN IF NOT EXISTS role VARCHAR(20) NOT NULL DEFAULT 'admin'",
+            "ALTER TABLE usuario ADD COLUMN IF NOT EXISTS owner_id INTEGER",
+            "ALTER TABLE usuario ADD COLUMN IF NOT EXISTS sucursal_id INTEGER",
+            "ALTER TABLE product ADD COLUMN IF NOT EXISTS sucursal_id INTEGER",
+            "ALTER TABLE sale ADD COLUMN IF NOT EXISTS sucursal_id INTEGER",
+            "ALTER TABLE insumo ADD COLUMN IF NOT EXISTS sucursal_id INTEGER",
+            "ALTER TABLE gasto ADD COLUMN IF NOT EXISTS sucursal_id INTEGER",
+            "ALTER TABLE pedido ADD COLUMN IF NOT EXISTS sucursal_id INTEGER",
+            "ALTER TABLE fiado ADD COLUMN IF NOT EXISTS sucursal_id INTEGER",
+            "ALTER TABLE client ADD COLUMN IF NOT EXISTS sucursal_id INTEGER",
+            "ALTER TABLE production_log ADD COLUMN IF NOT EXISTS sucursal_id INTEGER",
+        ]
+        if _db_url.startswith("postgresql://"):
+            for sql in migrations:
+                try:
+                    db.session.execute(text(sql))
+                except Exception:
+                    pass
+            db.session.commit()
+
 except Exception as e:
     _startup_error = f"{type(e).__name__}: {e}"
     logging.error(f"DB startup error: {e}")

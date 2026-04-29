@@ -9,3 +9,4 @@ class Insumo(db.Model):
     stock          = db.Column(db.Float, nullable=False, default=0)
     unidad         = db.Column(db.String(20), nullable=False, default="u")
     costo_unitario = db.Column(db.Float, nullable=False, default=0)
+    sucursal_id    = db.Column(db.Integer, nullable=True)

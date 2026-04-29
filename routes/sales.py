@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify, g
 from models.sale import Sale
 from models.product import Product
 from config_db import db
-from utils.auth_utils import require_auth
+from utils.auth_utils import require_auth, scoped_query, scoped_attrs
 
 sales_bp = Blueprint("sales", __name__)
 
@@ -19,18 +19,16 @@ def registrar_venta():
     if not isinstance(cantidad, int) or cantidad <= 0:
         return jsonify({"msg": "La cantidad debe ser un entero positivo"}), 400
 
-    p = Product.query.filter_by(id=product_id, user_id=g.user_id).first()
+    p = Product.query.filter_by(id=product_id, user_id=g.owner_id).first()
     if not p:
         return jsonify({"msg": "Producto no encontrado"}), 404
     if p.stock < cantidad:
         return jsonify({"msg": f"Stock insuficiente. Disponible: {p.stock}"}), 400
 
     p.stock -= cantidad
-    sale = Sale(
-        user_id=g.user_id, product_id=p.id,
-        nombre=p.nombre, cantidad=cantidad,
-        precio=p.venta, costo=p.costo
-    )
+    attrs = scoped_attrs()
+    sale = Sale(product_id=p.id, nombre=p.nombre, cantidad=cantidad,
+                precio=p.venta, costo=p.costo, **attrs)
     db.session.add(sale)
     db.session.commit()
 
@@ -40,7 +38,7 @@ def registrar_venta():
 @sales_bp.route("/ventas", methods=["GET"])
 @require_auth
 def obtener_ventas():
-    ventas = Sale.query.filter_by(user_id=g.user_id).order_by(Sale.created_at.desc()).all()
+    ventas = scoped_query(Sale).order_by(Sale.created_at.desc()).all()
     return jsonify([{
         "id":         v.id,
         "nombre":     v.nombre,

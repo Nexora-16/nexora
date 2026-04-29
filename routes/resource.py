@@ -1,16 +1,17 @@
 from flask import Blueprint, request, jsonify, g
 from services.resource_service import guardar_recurso, obtener_recurso
-from utils.auth_utils import require_auth
+from utils.auth_utils import require_auth, require_admin
 
 resource_bp = Blueprint("resource", __name__)
 
 
 @resource_bp.route("/recursos", methods=["POST"])
 @require_auth
+@require_admin
 def guardar():
     data = request.get_json(silent=True) or {}
 
-    alquiler = data.get("alquiler", 0)
+    alquiler  = data.get("alquiler", 0)
     empleados = data.get("empleados", 0)
     ubicacion = (data.get("ubicacion") or "").strip()
 
@@ -22,16 +23,17 @@ def guardar():
         return jsonify({"msg": "La ubicación es requerida"}), 400
 
     guardar_recurso({
-        "alquiler": float(alquiler),
+        "alquiler":  float(alquiler),
         "empleados": empleados,
         "ubicacion": ubicacion,
-        "user_id": g.user_id,
+        "user_id":   g.owner_id,
     })
     return jsonify({"msg": "Recursos guardados correctamente"})
 
 
 @resource_bp.route("/recursos", methods=["GET"])
 @require_auth
+@require_admin
 def obtener():
-    recurso = obtener_recurso(g.user_id)
+    recurso = obtener_recurso(g.owner_id)
     return jsonify(recurso if recurso else {})

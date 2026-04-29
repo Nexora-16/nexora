@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify, g
 from models.fiado import Fiado
 from models.client import Client
 from config_db import db
-from utils.auth_utils import require_auth
+from utils.auth_utils import require_auth, require_admin, scoped_query, scoped_attrs
 from datetime import datetime
 
 fiado_bp = Blueprint("fiado", __name__)
@@ -10,8 +10,9 @@ fiado_bp = Blueprint("fiado", __name__)
 
 @fiado_bp.route("/fiado", methods=["GET"])
 @require_auth
+@require_admin
 def listar_fiados():
-    fiados = Fiado.query.filter_by(user_id=g.user_id).order_by(Fiado.created_at.desc()).all()
+    fiados = scoped_query(Fiado).order_by(Fiado.created_at.desc()).all()
     return jsonify([{
         "id":            f.id,
         "client_id":     f.client_id,
@@ -26,6 +27,7 @@ def listar_fiados():
 
 @fiado_bp.route("/fiado", methods=["POST"])
 @require_auth
+@require_admin
 def registrar_fiado():
     data      = request.get_json(silent=True) or {}
     client_id = data.get("client_id")
@@ -39,12 +41,13 @@ def registrar_fiado():
     if monto is None or float(monto) <= 0:
         return jsonify({"msg": "El monto debe ser mayor a 0"}), 400
 
-    c = Client.query.filter_by(id=client_id, user_id=g.user_id).first()
+    c = Client.query.filter_by(id=client_id, user_id=g.owner_id).first()
     if not c:
         return jsonify({"msg": "Cliente no encontrado"}), 404
 
-    f = Fiado(user_id=g.user_id, client_id=c.id, client_nombre=c.nombre,
-              concepto=concepto, monto=float(monto))
+    attrs = scoped_attrs()
+    f = Fiado(client_id=c.id, client_nombre=c.nombre, concepto=concepto,
+              monto=float(monto), **attrs)
     db.session.add(f)
     db.session.commit()
     return jsonify({"msg": "Deuda registrada", "id": f.id}), 201
@@ -52,8 +55,9 @@ def registrar_fiado():
 
 @fiado_bp.route("/fiado/<int:fiado_id>/pagar", methods=["PUT"])
 @require_auth
+@require_admin
 def pagar_fiado(fiado_id):
-    f = Fiado.query.filter_by(id=fiado_id, user_id=g.user_id).first()
+    f = Fiado.query.filter_by(id=fiado_id, user_id=g.owner_id).first()
     if not f:
         return jsonify({"msg": "Fiado no encontrado"}), 404
     f.pagado    = True
@@ -64,8 +68,9 @@ def pagar_fiado(fiado_id):
 
 @fiado_bp.route("/fiado/<int:fiado_id>", methods=["DELETE"])
 @require_auth
+@require_admin
 def eliminar_fiado(fiado_id):
-    f = Fiado.query.filter_by(id=fiado_id, user_id=g.user_id).first()
+    f = Fiado.query.filter_by(id=fiado_id, user_id=g.owner_id).first()
     if not f:
         return jsonify({"msg": "Fiado no encontrado"}), 404
     db.session.delete(f)

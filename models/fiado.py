@@ -11,5 +11,6 @@ class Fiado(db.Model):
     concepto      = db.Column(db.String(200), nullable=False)
     monto         = db.Column(db.Float, nullable=False)
     pagado        = db.Column(db.Boolean, nullable=False, default=False)
+    sucursal_id   = db.Column(db.Integer, nullable=True)
     created_at    = db.Column(db.DateTime, default=datetime.utcnow)
     pagado_at     = db.Column(db.DateTime, nullable=True)

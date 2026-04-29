@@ -3,7 +3,7 @@ from models.pedido import Pedido
 from models.client import Client
 from models.product import Product
 from config_db import db
-from utils.auth_utils import require_auth
+from utils.auth_utils import require_auth, scoped_query, scoped_attrs
 
 pedidos_bp = Blueprint("pedidos", __name__)
 
@@ -11,7 +11,7 @@ pedidos_bp = Blueprint("pedidos", __name__)
 @pedidos_bp.route("/pedidos", methods=["GET"])
 @require_auth
 def listar_pedidos():
-    pedidos = Pedido.query.filter_by(user_id=g.user_id).order_by(Pedido.created_at.desc()).all()
+    pedidos = scoped_query(Pedido).order_by(Pedido.created_at.desc()).all()
     return jsonify([{
         "id":             p.id,
         "client_id":      p.client_id,
@@ -43,26 +43,23 @@ def registrar_pedido():
     if precio is None or float(precio) < 0:
         return jsonify({"msg": "El precio debe ser un número no negativo"}), 400
 
-    c = Client.query.filter_by(id=client_id, user_id=g.user_id).first()
+    c = Client.query.filter_by(id=client_id, user_id=g.owner_id).first()
     if not c:
         return jsonify({"msg": "Cliente no encontrado"}), 404
 
-    p = Product.query.filter_by(id=product_id, user_id=g.user_id).first()
+    p = Product.query.filter_by(id=product_id, user_id=g.owner_id).first()
     if not p:
         return jsonify({"msg": "Producto no encontrado"}), 404
     if p.stock < cantidad:
         return jsonify({"msg": f"Stock insuficiente. Disponible: {p.stock}"}), 400
 
     p.stock -= cantidad
+    attrs = scoped_attrs()
     pedido = Pedido(
-        user_id=g.user_id,
-        client_id=c.id,
-        client_nombre=c.nombre,
-        product_id=p.id,
-        product_nombre=p.nombre,
-        cantidad=cantidad,
-        precio=float(precio),
-        costo=p.costo
+        client_id=c.id, client_nombre=c.nombre,
+        product_id=p.id, product_nombre=p.nombre,
+        cantidad=cantidad, precio=float(precio), costo=p.costo,
+        **attrs
     )
     db.session.add(pedido)
     db.session.commit()

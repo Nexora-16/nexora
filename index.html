@@ -1059,6 +1059,49 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
   .bubble { max-width: 88%; }
   .sidebar { width: 240px; }
 }
+
+/* ══════════════════════════════════════════════
+   CAJA MODE (empleado)
+══════════════════════════════════════════════ */
+#caja { display: none; min-height: 100vh; flex-direction: column; }
+#caja.active { display: flex; }
+.caja-header {
+  background: rgba(3,28,14,0.96);
+  border-bottom: 1px solid rgba(34,197,94,0.2);
+  padding: 14px 20px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.caja-branch-name { font-size: 17px; font-weight: 700; color: #4ade80; }
+.caja-user-tag { font-size: 12px; color: #6ee7b7; opacity: 0.65; margin-top: 2px; }
+.caja-body { flex: 1; padding: 18px; max-width: 700px; margin: 0 auto; width: 100%; }
+.caja-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px; }
+.caja-prod-card {
+  background: rgba(5,46,22,0.45); border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 14px; padding: 14px 12px; text-align: center;
+  cursor: pointer; transition: background 0.18s, border-color 0.18s;
+}
+.caja-prod-card:hover { background: rgba(34,197,94,0.12); border-color: rgba(34,197,94,0.45); }
+.caja-prod-card.sin-stock { opacity: 0.4; cursor: not-allowed; }
+.caja-prod-nombre { font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #e2fce8; }
+.caja-prod-stock  { font-size: 24px; font-weight: 800; color: #4ade80; }
+.caja-prod-label  { font-size: 10px; color: #6ee7b7; opacity: 0.6; margin-top: 2px; }
+.caja-prod-precio { font-size: 12px; color: #86efac; margin-top: 4px; }
+/* ══════════════════════════════════════════════
+   SUCURSALES (admin)
+══════════════════════════════════════════════ */
+.suc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; margin-bottom: 20px; }
+.suc-card { background: rgba(5,46,22,0.4); border: 1px solid rgba(34,197,94,0.2); border-radius: 16px; padding: 18px; }
+.suc-card-name { font-size: 17px; font-weight: 700; color: #4ade80; margin-bottom: 4px; }
+.suc-card-dir  { font-size: 12px; color: #6ee7b7; opacity: 0.65; margin-bottom: 12px; min-height: 16px; }
+.suc-stat-row  { display: flex; gap: 10px; margin-bottom: 10px; }
+.suc-stat { flex: 1; background: rgba(0,0,0,0.2); border-radius: 10px; padding: 8px 6px; text-align: center; }
+.suc-stat-val { font-size: 16px; font-weight: 800; color: #22c55e; }
+.suc-stat-lbl { font-size: 10px; color: #6ee7b7; opacity: 0.6; }
+.suc-actions  { display: flex; gap: 8px; margin-top: 12px; }
+.suc-actions button { flex: 1; font-size: 12px; padding: 7px 4px; }
+.emp-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(34,197,94,0.08); }
+.emp-name { font-size: 14px; font-weight: 600; }
+.emp-branch { font-size: 11px; color: #6ee7b7; opacity: 0.6; }
 </style>
 </head>
 <body>
@@ -1142,6 +1185,9 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
     </button>
     <button data-screen="recursos"    onclick="navTo('recursos')">
       <span class="nav-icon">🏢</span> Recursos
+    </button>
+    <button data-screen="sucursales" onclick="navTo('sucursales')" id="navSucursales">
+      <span class="nav-icon">🏪</span> Sucursales
     </button>
   </nav>
   <div class="sidebar-footer">
@@ -1710,6 +1756,72 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
   </div>
 </div>
 
+<!-- ═══════════════ CAJA (modo empleado) ═══════════════ -->
+<div id="caja" class="screen">
+  <div class="caja-header">
+    <div>
+      <div class="caja-branch-name" id="cajaBranchName">Sucursal</div>
+      <div class="caja-user-tag">Modo Caja</div>
+    </div>
+    <button class="action secondary" style="padding:8px 14px;font-size:13px;" onclick="logout()">Salir</button>
+  </div>
+  <div class="caja-body">
+    <div id="cajaAlerta"></div>
+    <h3 style="margin-bottom:12px;font-size:15px;color:#86efac;">Tocá un producto para registrar una venta</h3>
+    <div class="caja-grid" id="cajaProductosGrid"></div>
+    <div class="card" id="cajaVentasHoyCard" style="display:none;">
+      <h3 style="margin-bottom:12px;">Ventas de hoy</h3>
+      <div id="cajaVentasHoyBody"></div>
+      <div id="cajaTotalHoy" style="margin-top:10px;font-weight:700;color:#4ade80;font-size:15px;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal cantidad caja -->
+<div class="modal-overlay" id="modalCaja">
+  <div class="modal-box">
+    <h3 id="modalCajaTitle">Registrar venta</h3>
+    <p id="modalCajaPrecio" style="color:#86efac;margin-bottom:12px;"></p>
+    <input id="modalCajaCantidad" type="number" min="1" step="1" placeholder="Cantidad" value="1">
+    <div class="modal-actions">
+      <button class="action" onclick="confirmarVentaCaja()">Vender</button>
+      <button class="action secondary" onclick="cerrarModalCaja()">Cancelar</button>
+    </div>
+    <div id="modalCajaResp"></div>
+  </div>
+</div>
+
+<!-- ═══════════════ SUCURSALES (admin) ═══════════════ -->
+<div id="sucursales" class="screen">
+  <div class="app-screen">
+    <h2>Sucursales</h2>
+
+    <!-- Crear sucursal -->
+    <div class="card">
+      <h3>Nueva sucursal</h3>
+      <input id="sucNombre" placeholder="Nombre (ej: Sucursal Centro)">
+      <input id="sucDireccion" placeholder="Dirección (opcional)">
+      <button class="action" id="btnCrearSuc" onclick="crearSucursal()">Agregar sucursal</button>
+      <div id="respuestaSuc"></div>
+    </div>
+
+    <!-- Lista de sucursales -->
+    <div class="suc-grid" id="sucGrid"></div>
+
+    <!-- Empleados -->
+    <div class="card" id="empSection" style="display:none;">
+      <h3>Empleados — <span id="empSucNombre"></span></h3>
+      <div id="empLista" style="margin-bottom:16px;"></div>
+      <h4 style="margin-bottom:10px;font-size:14px;">Agregar empleado</h4>
+      <input id="empUsername" placeholder="Usuario (mínimo 3 caracteres)">
+      <input id="empPassword" type="password" placeholder="Contraseña (mínimo 6 caracteres)">
+      <input type="hidden" id="empSucursalId">
+      <button class="action" id="btnCrearEmp" onclick="crearEmpleado()">Crear empleado</button>
+      <div id="respuestaEmp"></div>
+    </div>
+  </div>
+</div>
+
 <!-- ═══════════════ MODAL EDITAR ═══════════════ -->
 <div class="modal-overlay" id="modalEditar">
   <div class="modal-box">
@@ -1728,6 +1840,11 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
 
 <script>
 let token              = null;
+let userRole           = "admin";
+let sucursalId         = null;
+let sucursalNombreUser = "";
+let sucursales         = [];
+let cajaProdActual     = null;
 let productos          = [];
 let chart              = null;
 let editandoId         = null;
@@ -1751,7 +1868,7 @@ let fiadoClienteActual = null;
 
 const API = "";
 
-const SCREEN_TITLES = { ia: "Asistente IA", dashboard: "Dashboard", inventario: "Inventario", ventas: "Ventas", clientes: "Clientes", reportes: "Reportes", gastos: "Gastos", insumos: "Insumos", produccion: "Producción", recursos: "Recursos" };
+const SCREEN_TITLES = { ia: "Asistente IA", dashboard: "Dashboard", inventario: "Inventario", ventas: "Ventas", clientes: "Clientes", reportes: "Reportes", gastos: "Gastos", insumos: "Insumos", produccion: "Producción", recursos: "Recursos", sucursales: "Sucursales" };
 
 // ─── HELPERS ────────────────────────────────────────────────────────────────
 
@@ -1833,6 +1950,7 @@ function navTo(pantalla) {
   if (pantalla === "insumos" && token) cargarInsumos();
   if (pantalla === "produccion" && token) { cargarInsumos(); cargarProductos(); cargarProduccion(); cargarSugerencias(); }
   if (pantalla === "ia" && token) cargarHistorialChat();
+  if (pantalla === "sucursales" && token) cargarSucursales();
 }
 
 function setFechaHoy() {
@@ -1841,7 +1959,8 @@ function setFechaHoy() {
 }
 
 function logout() {
-  token = null; productos = []; chatHistory = []; chatLoaded = false;
+  token = null; userRole = "admin"; sucursalId = null; sucursalNombreUser = "";
+  productos = []; chatHistory = []; chatLoaded = false; sucursales = [];
   clientes = []; pedidosTodos = []; gastos = []; fiadoTodos = [];
   if (reporteChart) { reporteChart.destroy(); reporteChart = null; }
   document.getElementById("topbar").classList.remove("visible");
@@ -1880,11 +1999,21 @@ async function login() {
     const res  = await fetch(`${API}/api/login`, { method: "POST", headers: { "Content-Type":"application/json" }, body: JSON.stringify({ username, password }) });
     const json = await res.json();
     if (res.ok) {
-      token = json.token;
+      token    = json.token;
+      userRole = json.role || "admin";
       document.getElementById("auth").classList.remove("active");
-      document.getElementById("topbar").classList.add("visible");
-      setFechaHoy();
-      navTo("ia");
+      if (userRole === "empleado") {
+        sucursalId         = json.sucursal_id;
+        sucursalNombreUser = json.sucursal_nombre || "Sucursal";
+        document.getElementById("cajaBranchName").textContent = sucursalNombreUser;
+        void document.getElementById("caja").offsetWidth;
+        document.getElementById("caja").classList.add("active");
+        cargarCaja();
+      } else {
+        document.getElementById("topbar").classList.add("visible");
+        setFechaHoy();
+        navTo("ia");
+      }
     } else {
       mostrarAlerta("authRespuesta", json.msg, "error");
     }
@@ -3336,6 +3465,216 @@ async function cargarSugerencias() {
           <span class="sug-cant">Producir ~${s.sugerido} uds.</span>
         </div>`).join("");
     card.style.display = "block";
+  } catch { /* silencioso */ }
+}
+
+
+// ─── CAJA (modo empleado) ────────────────────────────────────────────────────
+
+async function cargarCaja() {
+  try {
+    const res = await fetch(`${API}/api/productos`, { headers: authHeaders() });
+    if (res.status === 401) { handleUnauthorized(); return; }
+    productos = res.ok ? await res.json() : [];
+    renderCajaGrid();
+    cargarVentasHoyCaja();
+  } catch { /* silencioso */ }
+}
+
+function renderCajaGrid() {
+  const grid = document.getElementById("cajaProductosGrid");
+  if (!productos.length) { grid.innerHTML = `<p style="color:#6ee7b7;opacity:0.6;">Sin productos disponibles.</p>`; return; }
+  grid.innerHTML = productos.map(p => `
+    <div class="caja-prod-card${p.stock <= 0 ? " sin-stock" : ""}"
+         onclick="${p.stock > 0 ? `abrirModalCaja(${p.id})` : ""}">
+      <div class="caja-prod-nombre">${escHtml(p.producto)}</div>
+      <div class="caja-prod-stock">${p.stock}</div>
+      <div class="caja-prod-label">en stock</div>
+      <div class="caja-prod-precio">$${p.venta.toFixed(2)}</div>
+    </div>`).join("");
+}
+
+function abrirModalCaja(prodId) {
+  cajaProdActual = productos.find(p => p.id === prodId);
+  if (!cajaProdActual) return;
+  document.getElementById("modalCajaTitle").textContent = cajaProdActual.producto;
+  document.getElementById("modalCajaPrecio").textContent = `$${cajaProdActual.venta.toFixed(2)} por unidad`;
+  document.getElementById("modalCajaCantidad").value = 1;
+  limpiarAlerta("modalCajaResp");
+  document.getElementById("modalCaja").classList.add("open");
+}
+function cerrarModalCaja() {
+  document.getElementById("modalCaja").classList.remove("open");
+  cajaProdActual = null;
+}
+
+async function confirmarVentaCaja() {
+  if (!cajaProdActual) return;
+  const cantidad = parseInt(document.getElementById("modalCajaCantidad").value);
+  if (!cantidad || cantidad <= 0) { mostrarAlerta("modalCajaResp", "Cantidad inválida.", "error"); return; }
+  try {
+    const res = await fetch(`${API}/api/ventas`, {
+      method: "POST", headers: authHeaders(),
+      body: JSON.stringify({ product_id: cajaProdActual.id, cantidad })
+    });
+    const json = await res.json();
+    if (res.ok) {
+      cerrarModalCaja();
+      mostrarAlerta("cajaAlerta", `✔ ${cantidad} × ${escHtml(cajaProdActual.producto)} vendido`, "success");
+      setTimeout(() => limpiarAlerta("cajaAlerta"), 3000);
+      cargarCaja();
+    } else {
+      mostrarAlerta("modalCajaResp", json.msg, "error");
+    }
+  } catch { mostrarAlerta("modalCajaResp", "Error de conexión.", "error"); }
+}
+
+async function cargarVentasHoyCaja() {
+  try {
+    const res = await fetch(`${API}/api/ventas`, { headers: authHeaders() });
+    if (!res.ok) return;
+    const ventas = await res.json();
+    const hoy = new Date().toLocaleDateString("es-AR", { day:"2-digit", month:"2-digit", year:"numeric" });
+    const hoyVentas = ventas.filter(v => v.created_at.startsWith(hoy.replace(/\//g, "/")));
+    const card = document.getElementById("cajaVentasHoyCard");
+    const body = document.getElementById("cajaVentasHoyBody");
+    if (!hoyVentas.length) { card.style.display = "none"; return; }
+    card.style.display = "block";
+    body.innerHTML = hoyVentas.map(v => `
+      <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(34,197,94,0.08);">
+        <span>${escHtml(v.nombre)} ×${v.cantidad}</span>
+        <span style="color:#4ade80;">$${(v.precio * v.cantidad).toFixed(2)}</span>
+      </div>`).join("");
+    const total = hoyVentas.reduce((s, v) => s + v.precio * v.cantidad, 0);
+    document.getElementById("cajaTotalHoy").textContent = `Total hoy: $${total.toFixed(2)}`;
+  } catch { /* silencioso */ }
+}
+
+
+// ─── SUCURSALES (admin) ──────────────────────────────────────────────────────
+
+async function cargarSucursales() {
+  try {
+    const res = await fetch(`${API}/api/sucursales`, { headers: authHeaders() });
+    if (!res.ok) return;
+    sucursales = await res.json();
+    renderSucursales();
+  } catch { /* silencioso */ }
+}
+
+async function renderSucursales() {
+  const grid = document.getElementById("sucGrid");
+  if (!sucursales.length) {
+    grid.innerHTML = `<p style="color:#6ee7b7;opacity:0.6;">No tenés sucursales aún. Creá la primera arriba.</p>`;
+    return;
+  }
+  const statsPromises = sucursales.map(s =>
+    fetch(`${API}/api/sucursales/${s.id}/stats`, { headers: authHeaders() })
+      .then(r => r.ok ? r.json() : {})
+      .catch(() => ({}))
+  );
+  const stats = await Promise.all(statsPromises);
+  grid.innerHTML = sucursales.map((s, i) => {
+    const st = stats[i] || {};
+    const bajo = (st.stock_bajo || []).length;
+    return `
+    <div class="suc-card">
+      <div class="suc-card-name">${escHtml(s.nombre)}</div>
+      <div class="suc-card-dir">${escHtml(s.direccion || "")}</div>
+      <div class="suc-stat-row">
+        <div class="suc-stat">
+          <div class="suc-stat-val">$${(st.ingresos_hoy||0).toFixed(0)}</div>
+          <div class="suc-stat-lbl">Ventas hoy</div>
+        </div>
+        <div class="suc-stat">
+          <div class="suc-stat-val">$${(st.ganancia_hoy||0).toFixed(0)}</div>
+          <div class="suc-stat-lbl">Ganancia hoy</div>
+        </div>
+        <div class="suc-stat">
+          <div class="suc-stat-val" style="${bajo>0?"color:#fbbf24":""}">${bajo}</div>
+          <div class="suc-stat-lbl">Stock bajo</div>
+        </div>
+      </div>
+      <div style="font-size:12px;color:#6ee7b7;opacity:0.6;">${s.empleados} empleado${s.empleados!==1?"s":""}</div>
+      <div class="suc-actions">
+        <button class="action secondary" onclick="verEmpleados(${s.id},'${escHtml(s.nombre)}')">Empleados</button>
+        <button class="action secondary" style="color:#f87171;border-color:#f87171;" onclick="eliminarSucursal(${s.id})">Eliminar</button>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+async function crearSucursal() {
+  const nombre    = document.getElementById("sucNombre").value.trim();
+  const direccion = document.getElementById("sucDireccion").value.trim();
+  if (!nombre) { mostrarAlerta("respuestaSuc", "El nombre es requerido.", "error"); return; }
+  setLoading("btnCrearSuc", true);
+  try {
+    const res  = await fetch(`${API}/api/sucursales`, { method:"POST", headers:authHeaders(), body:JSON.stringify({nombre,direccion}) });
+    const json = await res.json();
+    mostrarAlerta("respuestaSuc", json.msg, res.ok ? "success" : "error");
+    if (res.ok) { document.getElementById("sucNombre").value = ""; document.getElementById("sucDireccion").value = ""; cargarSucursales(); }
+  } catch { mostrarAlerta("respuestaSuc", "Error de conexión.", "error"); }
+  finally { setLoading("btnCrearSuc", false); }
+}
+
+async function eliminarSucursal(id) {
+  if (!confirm("¿Eliminar esta sucursal? Los empleados asignados quedarán sin sucursal.")) return;
+  try {
+    const res = await fetch(`${API}/api/sucursales/${id}`, { method:"DELETE", headers:authHeaders() });
+    if (res.ok) cargarSucursales();
+  } catch { /* silencioso */ }
+}
+
+async function verEmpleados(sucId, nombre) {
+  document.getElementById("empSucursalId").value = sucId;
+  document.getElementById("empSucNombre").textContent = nombre;
+  document.getElementById("empSection").style.display = "block";
+  limpiarAlerta("respuestaEmp");
+  try {
+    const res = await fetch(`${API}/api/empleados`, { headers: authHeaders() });
+    const todos = res.ok ? await res.json() : [];
+    const emp   = todos.filter(e => e.sucursal_id === sucId);
+    const lista = document.getElementById("empLista");
+    if (!emp.length) { lista.innerHTML = `<p style="color:#6ee7b7;opacity:0.6;font-size:13px;">Sin empleados en esta sucursal.</p>`; return; }
+    lista.innerHTML = emp.map(e => `
+      <div class="emp-item">
+        <div>
+          <div class="emp-name">${escHtml(e.username)}</div>
+        </div>
+        <button class="action secondary" style="padding:5px 10px;font-size:12px;color:#f87171;border-color:#f87171;" onclick="eliminarEmpleado(${e.id})">Eliminar</button>
+      </div>`).join("");
+  } catch { /* silencioso */ }
+}
+
+async function crearEmpleado() {
+  const username    = document.getElementById("empUsername").value.trim();
+  const password    = document.getElementById("empPassword").value;
+  const sucursal_id = parseInt(document.getElementById("empSucursalId").value);
+  if (username.length < 3) { mostrarAlerta("respuestaEmp", "El usuario debe tener al menos 3 caracteres.", "error"); return; }
+  if (password.length < 6) { mostrarAlerta("respuestaEmp", "La contraseña debe tener al menos 6 caracteres.", "error"); return; }
+  setLoading("btnCrearEmp", true);
+  try {
+    const res  = await fetch(`${API}/api/empleados`, { method:"POST", headers:authHeaders(), body:JSON.stringify({username,password,sucursal_id}) });
+    const json = await res.json();
+    mostrarAlerta("respuestaEmp", json.msg, res.ok ? "success" : "error");
+    if (res.ok) {
+      document.getElementById("empUsername").value = "";
+      document.getElementById("empPassword").value = "";
+      verEmpleados(sucursal_id, document.getElementById("empSucNombre").textContent);
+    }
+  } catch { mostrarAlerta("respuestaEmp", "Error de conexión.", "error"); }
+  finally { setLoading("btnCrearEmp", false); }
+}
+
+async function eliminarEmpleado(empId) {
+  if (!confirm("¿Eliminar este empleado?")) return;
+  try {
+    const res = await fetch(`${API}/api/empleados/${empId}`, { method:"DELETE", headers:authHeaders() });
+    if (res.ok) verEmpleados(
+      parseInt(document.getElementById("empSucursalId").value),
+      document.getElementById("empSucNombre").textContent
+    );
   } catch { /* silencioso */ }
 }
 

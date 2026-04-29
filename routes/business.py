@@ -3,13 +3,14 @@ from services.business_service import analizar_negocio
 from services.storage_service import agregar_producto
 from models.product import Product
 from config_db import db
-from utils.auth_utils import require_auth
+from utils.auth_utils import require_auth, require_admin, scoped_query, scoped_attrs
 
 business_bp = Blueprint("business", __name__)
 
 
 @business_bp.route("/business", methods=["POST"])
 @require_auth
+@require_admin
 def business():
     data = request.get_json(silent=True) or {}
 
@@ -27,12 +28,12 @@ def business():
     if venta is None or float(venta) < 0:
         return jsonify({"msg": "El precio de venta debe ser un número no negativo"}), 400
 
-    user_id = g.user_id
     costo = float(costo)
     venta = float(venta)
 
-    agregar_producto({"producto": producto, "stock": stock, "costo": costo, "venta": venta, "user_id": user_id})
-    respuesta = analizar_negocio(producto, stock, costo, venta, user_id)
+    attrs = scoped_attrs()
+    agregar_producto({"producto": producto, "stock": stock, "costo": costo, "venta": venta, **attrs})
+    respuesta = analizar_negocio(producto, stock, costo, venta, g.owner_id)
 
     return jsonify({"respuesta": respuesta})
 
@@ -40,7 +41,7 @@ def business():
 @business_bp.route("/productos", methods=["GET"])
 @require_auth
 def obtener_productos():
-    productos = Product.query.filter_by(user_id=g.user_id).all()
+    productos = scoped_query(Product).all()
     return jsonify([
         {"id": p.id, "producto": p.nombre, "stock": p.stock, "costo": p.costo, "venta": p.venta}
         for p in productos
@@ -49,8 +50,9 @@ def obtener_productos():
 
 @business_bp.route("/productos/<int:product_id>", methods=["PUT"])
 @require_auth
+@require_admin
 def editar_producto(product_id):
-    p = Product.query.filter_by(id=product_id, user_id=g.user_id).first()
+    p = Product.query.filter_by(id=product_id, user_id=g.owner_id).first()
     if not p:
         return jsonify({"msg": "Producto no encontrado"}), 404
 
@@ -80,8 +82,9 @@ def editar_producto(product_id):
 
 @business_bp.route("/productos/<int:product_id>", methods=["DELETE"])
 @require_auth
+@require_admin
 def eliminar_producto(product_id):
-    p = Product.query.filter_by(id=product_id, user_id=g.user_id).first()
+    p = Product.query.filter_by(id=product_id, user_id=g.owner_id).first()
     if not p:
         return jsonify({"msg": "Producto no encontrado"}), 404
 

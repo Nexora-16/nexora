@@ -4,7 +4,7 @@ from models.recipe_item import RecipeItem
 from models.product import Product
 from models.insumo import Insumo
 from config_db import db
-from utils.auth_utils import require_auth
+from utils.auth_utils import require_auth, scoped_query, scoped_attrs
 
 production_bp = Blueprint("production", __name__)
 
@@ -21,7 +21,7 @@ def registrar_produccion():
     if not isinstance(cantidad, int) or cantidad <= 0:
         return jsonify({"msg": "La cantidad debe ser un entero positivo"}), 400
 
-    p = Product.query.filter_by(id=product_id, user_id=g.user_id).first()
+    p = Product.query.filter_by(id=product_id, user_id=g.owner_id).first()
     if not p:
         return jsonify({"msg": "Producto no encontrado"}), 404
 
@@ -30,7 +30,7 @@ def registrar_produccion():
     if items:
         faltantes = []
         for item in items:
-            ins = Insumo.query.filter_by(id=item.insumo_id, user_id=g.user_id).first()
+            ins = Insumo.query.filter_by(id=item.insumo_id, user_id=g.owner_id).first()
             if not ins:
                 continue
             necesario = item.cantidad * cantidad
@@ -40,19 +40,20 @@ def registrar_produccion():
             return jsonify({"msg": "Stock de insumos insuficiente:\n" + "\n".join(faltantes)}), 400
 
         for item in items:
-            ins = Insumo.query.filter_by(id=item.insumo_id, user_id=g.user_id).first()
+            ins = Insumo.query.filter_by(id=item.insumo_id, user_id=g.owner_id).first()
             if ins:
                 ins.stock = round(ins.stock - item.cantidad * cantidad, 6)
 
         costo = sum(
-            (Insumo.query.filter_by(id=item.insumo_id, user_id=g.user_id).first().costo_unitario or 0) * item.cantidad
+            (Insumo.query.filter_by(id=item.insumo_id, user_id=g.owner_id).first().costo_unitario or 0) * item.cantidad
             for item in items
-            if Insumo.query.filter_by(id=item.insumo_id, user_id=g.user_id).first()
+            if Insumo.query.filter_by(id=item.insumo_id, user_id=g.owner_id).first()
         )
         p.costo = round(costo, 4)
 
     p.stock += cantidad
-    log = ProductionLog(user_id=g.user_id, product_id=p.id, nombre=p.nombre, cantidad=cantidad)
+    attrs = scoped_attrs()
+    log = ProductionLog(product_id=p.id, nombre=p.nombre, cantidad=cantidad, **attrs)
     db.session.add(log)
     db.session.commit()
 
@@ -66,7 +67,7 @@ def registrar_produccion():
 @production_bp.route("/produccion", methods=["GET"])
 @require_auth
 def obtener_produccion():
-    logs = ProductionLog.query.filter_by(user_id=g.user_id).order_by(ProductionLog.created_at.desc()).all()
+    logs = scoped_query(ProductionLog).order_by(ProductionLog.created_at.desc()).all()
     return jsonify([{
         "id":         l.id,
         "nombre":     l.nombre,

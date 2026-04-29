@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify, g
 from models.gasto import Gasto
 from config_db import db
-from utils.auth_utils import require_auth
+from utils.auth_utils import require_auth, require_admin, scoped_query, scoped_attrs
 from datetime import date
 
 gastos_bp = Blueprint("gastos", __name__)
@@ -11,8 +11,9 @@ CATEGORIAS = {"Gas", "Electricidad", "Packaging", "Insumos", "Sueldos", "Otros"}
 
 @gastos_bp.route("/gastos", methods=["GET"])
 @require_auth
+@require_admin
 def listar_gastos():
-    gastos = Gasto.query.filter_by(user_id=g.user_id).order_by(Gasto.fecha.desc(), Gasto.created_at.desc()).all()
+    gastos = scoped_query(Gasto).order_by(Gasto.fecha.desc(), Gasto.created_at.desc()).all()
     return jsonify([{
         "id":        g_.id,
         "concepto":  g_.concepto,
@@ -24,6 +25,7 @@ def listar_gastos():
 
 @gastos_bp.route("/gastos", methods=["POST"])
 @require_auth
+@require_admin
 def agregar_gasto():
     data      = request.get_json(silent=True) or {}
     concepto  = (data.get("concepto") or "").strip()
@@ -47,8 +49,9 @@ def agregar_gasto():
     else:
         fecha = date.today()
 
-    gasto = Gasto(user_id=g.user_id, concepto=concepto, monto=float(monto),
-                  categoria=categoria, fecha=fecha)
+    attrs = scoped_attrs()
+    gasto = Gasto(concepto=concepto, monto=float(monto), categoria=categoria,
+                  fecha=fecha, **attrs)
     db.session.add(gasto)
     db.session.commit()
     return jsonify({"msg": "Gasto registrado", "id": gasto.id}), 201
@@ -56,8 +59,9 @@ def agregar_gasto():
 
 @gastos_bp.route("/gastos/<int:gasto_id>", methods=["DELETE"])
 @require_auth
+@require_admin
 def eliminar_gasto(gasto_id):
-    g_ = Gasto.query.filter_by(id=gasto_id, user_id=g.user_id).first()
+    g_ = Gasto.query.filter_by(id=gasto_id, user_id=g.owner_id).first()
     if not g_:
         return jsonify({"msg": "Gasto no encontrado"}), 404
     db.session.delete(g_)

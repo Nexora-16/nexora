@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify, g
 from models.insumo import Insumo
 from config_db import db
-from utils.auth_utils import require_auth
+from utils.auth_utils import require_auth, require_admin, scoped_query, scoped_attrs
 
 insumos_bp = Blueprint("insumos", __name__)
 
@@ -11,7 +11,7 @@ UNIDADES_VALIDAS = {"kg", "g", "l", "ml", "u"}
 @insumos_bp.route("/insumos", methods=["GET"])
 @require_auth
 def listar_insumos():
-    insumos = Insumo.query.filter_by(user_id=g.user_id).order_by(Insumo.nombre).all()
+    insumos = scoped_query(Insumo).order_by(Insumo.nombre).all()
     return jsonify([{
         "id":             i.id,
         "nombre":         i.nombre,
@@ -23,6 +23,7 @@ def listar_insumos():
 
 @insumos_bp.route("/insumos", methods=["POST"])
 @require_auth
+@require_admin
 def agregar_insumo():
     data   = request.get_json(silent=True) or {}
     nombre = (data.get("nombre") or "").strip()
@@ -39,8 +40,9 @@ def agregar_insumo():
     if costo is None or float(costo) < 0:
         return jsonify({"msg": "El costo debe ser un número no negativo"}), 400
 
-    insumo = Insumo(user_id=g.user_id, nombre=nombre, stock=float(stock),
-                    unidad=unidad, costo_unitario=float(costo))
+    attrs = scoped_attrs()
+    insumo = Insumo(nombre=nombre, stock=float(stock), unidad=unidad,
+                    costo_unitario=float(costo), **attrs)
     db.session.add(insumo)
     db.session.commit()
     return jsonify({"msg": "Insumo agregado", "id": insumo.id}), 201
@@ -48,8 +50,9 @@ def agregar_insumo():
 
 @insumos_bp.route("/insumos/<int:insumo_id>", methods=["PUT"])
 @require_auth
+@require_admin
 def editar_insumo(insumo_id):
-    ins = Insumo.query.filter_by(id=insumo_id, user_id=g.user_id).first()
+    ins = Insumo.query.filter_by(id=insumo_id, user_id=g.owner_id).first()
     if not ins:
         return jsonify({"msg": "Insumo no encontrado"}), 404
 
@@ -78,8 +81,9 @@ def editar_insumo(insumo_id):
 
 @insumos_bp.route("/insumos/<int:insumo_id>", methods=["DELETE"])
 @require_auth
+@require_admin
 def eliminar_insumo(insumo_id):
-    ins = Insumo.query.filter_by(id=insumo_id, user_id=g.user_id).first()
+    ins = Insumo.query.filter_by(id=insumo_id, user_id=g.owner_id).first()
     if not ins:
         return jsonify({"msg": "Insumo no encontrado"}), 404
     db.session.delete(ins)

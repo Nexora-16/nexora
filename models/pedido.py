@@ -13,4 +13,5 @@ class Pedido(db.Model):
     cantidad       = db.Column(db.Integer, nullable=False)
     precio         = db.Column(db.Float, nullable=False)
     costo          = db.Column(db.Float, nullable=False)
+    sucursal_id    = db.Column(db.Integer, nullable=True)
     created_at     = db.Column(db.DateTime, default=datetime.utcnow)
