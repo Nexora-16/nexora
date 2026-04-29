@@ -25,6 +25,9 @@ try:
         _db_url += "?sslmode=require"
     app.config["SQLALCHEMY_DATABASE_URI"] = _db_url
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    if _db_url.startswith("postgresql://"):
+        from sqlalchemy.pool import NullPool
+        app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"poolclass": NullPool}
     app.config["MEMORIA"] = {}
 except Exception as e:
     _boot_errors.append(f"config: {type(e).__name__}: {e}")
