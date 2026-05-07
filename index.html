@@ -1470,6 +1470,130 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
 @media (max-width: 480px) {
   .kpi-row { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* ══════════════════════════════════════════════
+   APP LIGHT THEME  (body.app-active)
+══════════════════════════════════════════════ */
+
+/* Desktop: sidebar siempre visible */
+@media (min-width: 768px) {
+  body.app-active .sidebar       { transform: translateX(0) !important; box-shadow: 2px 0 24px rgba(0,0,0,0.18); }
+  body.app-active .sidebar-overlay { display: none !important; }
+  body.app-active .hamburger-btn { display: none; }
+  body.app-active .topbar        { margin-left: 272px; }
+  body.app-active .screen        { margin-left: 272px; }
+  body.app-active #ia            { margin-left: 272px; }
+}
+
+body.app-active { background: #f0f2f5; }
+body.app-active .screen.active  { background: #f0f2f5; min-height: 100vh; }
+
+/* Topbar */
+body.app-active .topbar {
+  background: #ffffff;
+  border-bottom: 1px solid rgba(0,0,0,0.07);
+  box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+  backdrop-filter: none;
+}
+body.app-active .topbar-title            { color: #1e293b; }
+body.app-active .hamburger-btn span      { background: #64748b; }
+body.app-active .hamburger-btn:hover     { background: rgba(0,0,0,0.05); }
+
+/* Headings */
+body.app-active h2 { color: #1e293b; }
+
+/* Cards */
+body.app-active .card {
+  background: #ffffff;
+  border: none;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.04);
+}
+body.app-active .card h3 { color: #475569; }
+
+/* KPI cards */
+body.app-active .kpi-card {
+  background: #ffffff;
+  border: none;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.04);
+}
+body.app-active .kpi-label           { color: #64748b; opacity: 1; }
+body.app-active .kpi-value           { color: #1e293b; }
+body.app-active .kpi-value.green     { color: #b45309; }
+
+/* Metrics */
+body.app-active .metric              { background: #f8fafc; border: 1px solid rgba(0,0,0,0.07); }
+body.app-active .metric-label        { color: #64748b; }
+body.app-active .metric-value        { color: #1e293b; }
+body.app-active .green               { color: #b45309; }
+
+/* Product rows */
+body.app-active .product-name        { color: #1e293b; }
+body.app-active .product-details     { color: #64748b; opacity: 1; }
+body.app-active .product-row         { border-bottom: 1px solid rgba(0,0,0,0.06); }
+body.app-active .badge-green { background: rgba(245,158,11,0.1); color: #b45309; border-color: rgba(245,158,11,0.28); }
+body.app-active .badge-red   { background: rgba(239,68,68,0.08); color: #dc2626; border-color: rgba(239,68,68,0.2); }
+
+/* Inputs / selects */
+body.app-active input:not([type=checkbox]),
+body.app-active textarea,
+body.app-active select,
+body.app-active .form-select,
+body.app-active .venta-form select,
+body.app-active .venta-qty {
+  background: #ffffff;
+  border: 1px solid rgba(0,0,0,0.13);
+  color: #1e293b;
+}
+body.app-active input:not([type=checkbox]):focus,
+body.app-active textarea:focus,
+body.app-active select:focus,
+body.app-active .form-select:focus,
+body.app-active .venta-qty:focus {
+  border-color: rgba(245,158,11,0.55);
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(245,158,11,0.08);
+}
+body.app-active input::placeholder,
+body.app-active textarea::placeholder { color: rgba(0,0,0,0.28); }
+body.app-active .venta-form select option,
+body.app-active select option,
+body.app-active .form-select option   { background: #ffffff; color: #1e293b; }
+body.app-active label                 { color: #374151; }
+
+/* Secondary action button */
+body.app-active button.action.secondary {
+  background: #f1f5f9;
+  border: 1px solid rgba(0,0,0,0.12);
+  color: #374151;
+}
+
+/* Tables */
+body.app-active .inv-table th         { background: #f8fafc; color: #64748b; border-bottom: 1px solid rgba(0,0,0,0.08); }
+body.app-active .inv-table td         { border-bottom: 1px solid rgba(0,0,0,0.05); color: #1e293b; }
+body.app-active .inv-table tbody tr:hover td { background: rgba(245,158,11,0.04); }
+body.app-active .inv-table .td-green  { color: #b45309; }
+body.app-active .inv-table .td-red    { color: #dc2626; }
+
+/* Gasto rows */
+body.app-active .gasto-row            { border-bottom: 1px solid rgba(0,0,0,0.06); color: #1e293b; }
+
+/* Caja card */
+body.app-active .caja-card   { background: #ffffff; border: none; box-shadow: 0 2px 12px rgba(0,0,0,0.07); }
+body.app-active .caja-title  { color: #92400e; }
+body.app-active .caja-label  { color: #64748b; opacity: 1; }
+body.app-active .caja-row    { border-bottom: 1px solid rgba(0,0,0,0.05); }
+body.app-active .caja-total  { color: #b45309; border-top-color: rgba(0,0,0,0.08); }
+body.app-active .caja-val    { color: #1e293b; }
+
+/* Stock alert */
+body.app-active .stock-alert-card  { background: #fff7ed; border: 1px solid rgba(245,158,11,0.3); }
+body.app-active .stock-alert-title { color: #92400e; }
+body.app-active .stock-alert-item  { color: #78350f; }
+body.app-active .stock-alert-qty   { color: #b45309; }
+
+/* Empty states */
+body.app-active .empty-state h3    { color: #374151; }
+body.app-active .empty-state p     { color: #6b7280; }
 </style>
 </head>
 <body>
@@ -2791,6 +2915,7 @@ function irALogin() {
 }
 
 function logout() {
+  document.body.classList.remove("app-active");
   token = null; userRole = "admin"; sucursalId = null; sucursalNombreUser = "";
   productos = []; chatHistory = []; chatLoaded = false; sucursales = [];
   clientes = []; pedidosTodos = []; gastos = []; fiadoTodos = [];
@@ -2834,6 +2959,7 @@ async function login() {
     if (res.ok) {
       token    = json.token;
       userRole = json.role || "admin";
+      document.body.classList.add("app-active");
       document.getElementById("auth").classList.remove("active");
       if (userRole === "empleado") {
         sucursalId         = json.sucursal_id;
