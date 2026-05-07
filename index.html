@@ -11,6 +11,7 @@
 <link rel="manifest" href="/manifest.json">
 <link rel="icon" href="/nexora-icon.svg" type="image/svg+xml">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,700;9..144,900&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
@@ -1288,15 +1289,22 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
   display: flex; align-items: center; justify-content: center;
   text-align: center;
   padding: 0 2rem;
+  background: #000;
 }
+#shaderHero {
+  position: absolute; inset: 0; z-index: 0;
+  overflow: hidden;
+}
+#shaderHero canvas { width: 100% !important; height: 100% !important; display: block; }
 .landing-hero::before {
-  content: ''; position: absolute; inset: 0;
+  content: ''; position: absolute; inset: 0; z-index: 1;
   background:
-    radial-gradient(ellipse at 50% 65%, rgba(244,165,39,0.2) 0%, transparent 52%),
-    radial-gradient(ellipse at 28% 30%, rgba(201,116,42,0.12) 0%, transparent 58%),
-    linear-gradient(180deg, #0a0403 0%, #140802 100%);
+    radial-gradient(ellipse at 50% 60%, rgba(244,165,39,0.18) 0%, transparent 55%),
+    radial-gradient(ellipse at 28% 30%, rgba(201,116,42,0.10) 0%, transparent 58%),
+    linear-gradient(180deg, rgba(10,4,3,0.55) 0%, rgba(10,4,3,0.3) 50%, rgba(10,4,3,0.7) 100%);
   pointer-events: none;
 }
+.landing-hero-content { position: relative; z-index: 3; }
 .landing-hero-content {
   position: relative; z-index: 2;
   max-width: 920px;
@@ -1489,6 +1497,7 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
 
   <!-- HERO -->
   <section class="landing-hero">
+    <div id="shaderHero"></div>
     <div class="landing-hero-content">
       <div class="l-eyebrow">· Sistema de gestión para panaderías ·</div>
       <h1 class="landing-tagline">
@@ -2693,6 +2702,66 @@ function setFechaHoy() {
   const el = document.getElementById("gasFecha");
   if (el) { const d=new Date(); el.value=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; }
 }
+
+// Shader hero background
+(function initShader() {
+  if (typeof THREE === 'undefined') return;
+  var container = document.getElementById('shaderHero');
+  if (!container) return;
+
+  var camera = new THREE.Camera();
+  camera.position.z = 1;
+  var scene = new THREE.Scene();
+  var geo = new THREE.PlaneGeometry(2, 2);
+
+  var uniforms = {
+    time:       { value: 1.0 },
+    resolution: { value: new THREE.Vector2() }
+  };
+
+  var mat = new THREE.ShaderMaterial({
+    uniforms: uniforms,
+    vertexShader: 'void main(){gl_Position=vec4(position,1.0);}',
+    fragmentShader: [
+      'precision highp float;',
+      'uniform vec2 resolution;',
+      'uniform float time;',
+      'void main(void){',
+      '  vec2 uv=(gl_FragCoord.xy*2.0-resolution.xy)/min(resolution.x,resolution.y);',
+      '  float t=time*0.05;',
+      '  float lw=0.002;',
+      '  vec3 col=vec3(0.0);',
+      '  for(int j=0;j<3;j++){',
+      '    for(int i=0;i<5;i++){',
+      '      col[j]+=lw*float(i*i)/abs(fract(t-0.01*float(j)+float(i)*0.01)*5.0-length(uv)+mod(uv.x+uv.y,0.2));',
+      '    }',
+      '  }',
+      '  gl_FragColor=vec4(col[0],col[1],col[2],1.0);',
+      '}'
+    ].join('\n')
+  });
+
+  scene.add(new THREE.Mesh(geo, mat));
+
+  var renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  container.appendChild(renderer.domElement);
+
+  function resize() {
+    var w = container.clientWidth || window.innerWidth;
+    var h = container.clientHeight || window.innerHeight;
+    renderer.setSize(w, h);
+    uniforms.resolution.value.set(renderer.domElement.width, renderer.domElement.height);
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  (function animate() {
+    requestAnimationFrame(animate);
+    uniforms.time.value += 0.05;
+    renderer.render(scene, camera);
+  })();
+})();
 
 // Landing particles
 (function() {
