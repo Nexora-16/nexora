@@ -112,3 +112,52 @@ def ventas_caja_hoy():
         "label":  _METODO_LABEL.get(v.nombre.replace("caja:", ""), "Efectivo"),
         "hora":   v.created_at.strftime("%H:%M"),
     } for v in ventas])
+
+
+@sales_bp.route("/cierre-dia", methods=["GET"])
+@require_auth
+def cierre_dia():
+    from models.gasto import Gasto
+    from services.ia_service import resumen_dia_ia
+
+    hoy_inicio = datetime.combine(date.today(), datetime.min.time())
+
+    ventas_caja = (scoped_query(Sale)
+                   .filter(Sale.nombre.like("caja:%"))
+                   .filter(Sale.created_at >= hoy_inicio)
+                   .all())
+
+    ventas_productos = (scoped_query(Sale)
+                        .filter(~Sale.nombre.like("caja:%"))
+                        .filter(Sale.created_at >= hoy_inicio)
+                        .all())
+
+    total_caja = sum(v.precio for v in ventas_caja)
+
+    por_metodo = {}
+    for v in ventas_caja:
+        metodo = v.nombre.replace("caja:", "")
+        por_metodo[metodo] = por_metodo.get(metodo, 0) + v.precio
+
+    total_productos  = sum(v.precio * v.cantidad for v in ventas_productos)
+    ganancia_prods   = sum((v.precio - v.costo) * v.cantidad for v in ventas_productos)
+
+    gastos_hoy   = []
+    if getattr(g, "role", "admin") == "admin":
+        gastos_hoy = Gasto.query.filter_by(user_id=g.owner_id).filter(
+            Gasto.fecha == date.today()
+        ).all()
+    total_gastos = sum(gs.monto for gs in gastos_hoy)
+
+    stats = {
+        "total_caja":        round(total_caja, 2),
+        "total_productos":   round(total_productos, 2),
+        "total_ventas":      round(total_caja + total_productos, 2),
+        "ganancia_neta":     round(ganancia_prods - total_gastos, 2),
+        "total_gastos":      round(total_gastos, 2),
+        "por_metodo":        {k: round(v, 2) for k, v in por_metodo.items()},
+        "cant_operaciones":  len(ventas_caja) + len(ventas_productos),
+    }
+
+    resumen = resumen_dia_ia(stats)
+    return jsonify({"resumen": resumen, "stats": stats})

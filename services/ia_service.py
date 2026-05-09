@@ -33,6 +33,51 @@ def buscar_competencia(termino, ubicacion):
         return None
 
 
+def resumen_dia_ia(stats):
+    fecha_str = __import__("datetime").date.today().strftime("%d/%m/%Y")
+    if not GROQ_API_KEY:
+        total = stats.get("total_ventas", 0)
+        ops   = stats.get("cant_operaciones", 0)
+        return f"Hoy recaudaste ${total:,.0f} en {ops} operaciones. (Configurá GROQ_API_KEY para el resumen con IA)"
+
+    metodos = stats.get("por_metodo", {})
+    metodos_str = ", ".join(f"{k}: ${v:,.0f}" for k, v in metodos.items()) or "ninguno"
+
+    prompt = f"""Sos el asesor de un negocio de panadería/confitería. Escribí un resumen breve del día.
+Usá el voseo rioplatense. Sin markdown. Máximo 3 oraciones. Sé positivo pero honesto.
+
+DATOS DEL {fecha_str}:
+- Total recaudado: ${stats.get('total_ventas', 0):,.0f}
+- Caja libre: ${stats.get('total_caja', 0):,.0f}
+- Ventas de productos: ${stats.get('total_productos', 0):,.0f}
+- Desglose por método: {metodos_str}
+- Gastos del día: ${stats.get('total_gastos', 0):,.0f}
+- Ganancia estimada: ${stats.get('ganancia_neta', 0):,.0f}
+- Operaciones totales: {stats.get('cant_operaciones', 0)}
+
+Resumen del día:"""
+
+    try:
+        res = requests.post(
+            GROQ_URL,
+            headers={"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"},
+            json={
+                "model": GROQ_MODEL,
+                "messages": [{"role": "user", "content": prompt}],
+                "max_tokens": 180,
+                "temperature": 0.75,
+            },
+            timeout=20,
+        )
+        res.raise_for_status()
+        return res.json()["choices"][0]["message"]["content"].strip()
+    except Exception as e:
+        print("ERROR IA cierre:", e)
+        total = stats.get("total_ventas", 0)
+        ops   = stats.get("cant_operaciones", 0)
+        return f"Hoy recaudaste ${total:,.0f} en {ops} operaciones."
+
+
 def preguntar_ia(contexto, pregunta):
     if not GROQ_API_KEY:
         return "Para activar la IA configurá la variable de entorno GROQ_API_KEY con tu clave de Groq (groq.com, es gratis)."

@@ -1266,6 +1266,80 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
 .calc-hist-row:last-child { border-bottom: none; }
 .calc-hist-monto { font-weight: 700; color: #fbbf24; }
 .calc-hist-meta  { font-size: 11px; color: rgba(254,243,199,0.45); margin-top: 2px; }
+
+/* ── Cerrar día ── */
+.calc-cerrar-dia {
+  width: 100%; padding: 13px; margin-bottom: 12px;
+  border: 1px solid rgba(245,158,11,0.35);
+  background: rgba(245,158,11,0.1); color: #fbbf24;
+  border-radius: 12px; font-size: 14px; font-weight: 700;
+  cursor: pointer; font-family: inherit; transition: background 0.18s;
+}
+.calc-cerrar-dia:hover { background: rgba(245,158,11,0.2); }
+.cierre-overlay {
+  position: fixed; inset: 0; z-index: 900;
+  background: rgba(0,0,0,0.75); backdrop-filter: blur(4px);
+  display: none; align-items: flex-end; justify-content: center;
+}
+.cierre-overlay.open { display: flex; }
+.cierre-sheet {
+  background: #0d0500;
+  border: 1px solid rgba(245,158,11,0.25);
+  border-bottom: none; border-radius: 24px 24px 0 0;
+  width: 100%; max-width: 480px; padding: 24px 20px 36px;
+  max-height: 85vh; overflow-y: auto;
+}
+.cierre-handle {
+  width: 40px; height: 4px; border-radius: 2px;
+  background: rgba(245,158,11,0.25); margin: 0 auto 20px;
+}
+.cierre-titulo {
+  font-size: 20px; font-weight: 800; color: #fbbf24;
+  text-align: center; margin-bottom: 20px;
+}
+.cierre-stat-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px;
+}
+.cierre-stat {
+  background: rgba(245,158,11,0.07); border: 1px solid rgba(245,158,11,0.15);
+  border-radius: 14px; padding: 12px;
+}
+.cierre-stat-val { font-size: 20px; font-weight: 800; color: #f59e0b; letter-spacing: -0.5px; }
+.cierre-stat-lbl { font-size: 11px; color: #fcd34d; opacity: 0.65; margin-top: 3px; }
+.cierre-metodos {
+  background: rgba(0,0,0,0.3); border: 1px solid rgba(245,158,11,0.12);
+  border-radius: 14px; padding: 14px; margin-bottom: 16px;
+}
+.cierre-metodo-row {
+  display: flex; justify-content: space-between; font-size: 14px;
+  padding: 5px 0; border-bottom: 1px solid rgba(245,158,11,0.07);
+}
+.cierre-metodo-row:last-child { border-bottom: none; }
+.cierre-ia-box {
+  background: rgba(245,158,11,0.05); border: 1px solid rgba(245,158,11,0.2);
+  border-radius: 14px; padding: 16px; margin-bottom: 20px; min-height: 60px;
+}
+.cierre-ia-label {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1px;
+  color: #fcd34d; opacity: 0.55; margin-bottom: 8px;
+}
+.cierre-ia-text { font-size: 14px; line-height: 1.7; color: #fef3c7; }
+.cierre-ia-dot::after {
+  content: "..."; animation: cierre-dots 1.2s steps(3, end) infinite;
+}
+@keyframes cierre-dots {
+  0%   { content: "."; }
+  33%  { content: ".."; }
+  66%  { content: "..."; }
+}
+.cierre-close-btn {
+  width: 100%; padding: 14px; background: rgba(245,158,11,0.15);
+  border: 1px solid rgba(245,158,11,0.3); color: #fbbf24;
+  border-radius: 14px; font-size: 14px; font-weight: 700;
+  cursor: pointer; font-family: inherit; transition: background 0.18s;
+}
+.cierre-close-btn:hover { background: rgba(245,158,11,0.25); }
+
 /* ══════════════════════════════════════════════
    SUCURSALES (admin)
 ══════════════════════════════════════════════ */
@@ -2592,8 +2666,29 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
     <!-- Anular -->
     <button class="calc-anular" onclick="anularUltimaVenta()">✕ Anular última venta</button>
 
+    <!-- Cerrar día -->
+    <button class="calc-cerrar-dia" onclick="abrirCierreDia()">☀ Cerrar día</button>
+
     <!-- Historial -->
     <div id="calcHistorial"></div>
+  </div>
+</div>
+
+<!-- ═══ CIERRE DÍA ═══ -->
+<div class="cierre-overlay" id="cierreOverlay" onclick="cerrarCierreDia(event)">
+  <div class="cierre-sheet">
+    <div class="cierre-handle"></div>
+    <div class="cierre-titulo">Resumen del día</div>
+    <div class="cierre-stat-grid" id="cierreStats">
+      <div class="cierre-stat"><div class="cierre-stat-val">—</div><div class="cierre-stat-lbl">Total del día</div></div>
+      <div class="cierre-stat"><div class="cierre-stat-val">—</div><div class="cierre-stat-lbl">Operaciones</div></div>
+    </div>
+    <div class="cierre-metodos" id="cierreMetodos" style="display:none;"></div>
+    <div class="cierre-ia-box">
+      <div class="cierre-ia-label">Análisis IA</div>
+      <div class="cierre-ia-text" id="cierreIaText"><span class="cierre-ia-dot">Analizando tu jornada</span></div>
+    </div>
+    <button class="cierre-close-btn" onclick="cerrarCierreDia()">Cerrar</button>
   </div>
 </div>
 
@@ -4997,6 +5092,70 @@ async function cargarHistorialCaja() {
 async function cargarCaja() {
   calcClear();
   cargarHistorialCaja();
+}
+
+async function abrirCierreDia() {
+  const overlay = document.getElementById("cierreOverlay");
+  overlay.classList.add("open");
+  document.getElementById("cierreStats").innerHTML = `
+    <div class="cierre-stat"><div class="cierre-stat-val">—</div><div class="cierre-stat-lbl">Total del día</div></div>
+    <div class="cierre-stat"><div class="cierre-stat-val">—</div><div class="cierre-stat-lbl">Operaciones</div></div>`;
+  document.getElementById("cierreMetodos").style.display = "none";
+  document.getElementById("cierreIaText").innerHTML = '<span class="cierre-ia-dot">Analizando tu jornada</span>';
+
+  try {
+    const res = await fetch(`${API}/api/cierre-dia`, { headers: authHeaders() });
+    if (!res.ok) {
+      document.getElementById("cierreIaText").textContent = "No se pudo obtener el resumen.";
+      return;
+    }
+    const data = await res.json();
+    const fmt  = n => "$" + (n || 0).toLocaleString("es-AR");
+    const s    = data.stats || {};
+
+    document.getElementById("cierreStats").innerHTML = `
+      <div class="cierre-stat">
+        <div class="cierre-stat-val">${fmt(s.total_ventas)}</div>
+        <div class="cierre-stat-lbl">Total del día</div>
+      </div>
+      <div class="cierre-stat">
+        <div class="cierre-stat-val">${s.cant_operaciones || 0}</div>
+        <div class="cierre-stat-lbl">Operaciones</div>
+      </div>
+      <div class="cierre-stat">
+        <div class="cierre-stat-val">${fmt(s.total_caja)}</div>
+        <div class="cierre-stat-lbl">Caja libre</div>
+      </div>
+      <div class="cierre-stat">
+        <div class="cierre-stat-val">${fmt(s.ganancia_neta)}</div>
+        <div class="cierre-stat-lbl">Ganancia est.</div>
+      </div>`;
+
+    const metodos = s.por_metodo || {};
+    const mkeys   = Object.keys(metodos);
+    const iconM   = { efectivo:"💵", transferencia:"📱", tarjeta:"💳" };
+    const labelM  = { efectivo:"Efectivo", transferencia:"Transferencia", tarjeta:"Tarjeta" };
+    if (mkeys.length) {
+      const el = document.getElementById("cierreMetodos");
+      el.style.display = "block";
+      el.innerHTML =
+        `<div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#fcd34d;opacity:0.55;margin-bottom:10px;">Por método</div>` +
+        mkeys.map(k => `
+          <div class="cierre-metodo-row">
+            <span>${iconM[k] || ""} ${labelM[k] || k}</span>
+            <span style="font-weight:700;color:#fbbf24;">${fmt(metodos[k])}</span>
+          </div>`).join("");
+    }
+
+    document.getElementById("cierreIaText").textContent = data.resumen || "—";
+  } catch {
+    document.getElementById("cierreIaText").textContent = "Error al obtener el resumen.";
+  }
+}
+
+function cerrarCierreDia(e) {
+  if (e && e.target !== document.getElementById("cierreOverlay")) return;
+  document.getElementById("cierreOverlay").classList.remove("open");
 }
 
 
