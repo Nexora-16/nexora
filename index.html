@@ -1846,29 +1846,29 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
   </div>
   <nav class="sidebar-nav">
 
-    <!-- IA (standalone) -->
+    <!-- IA (standalone hero) -->
     <button data-screen="ia" onclick="navTo('ia')">
       <span class="nav-icon">🧠</span> Asistente IA
     </button>
 
-    <!-- Análisis: Dashboard + Reportes -->
+    <!-- Vender: Ventas + Clientes -->
     <div class="nav-group">
-      <button class="nav-group-header" onclick="toggleNavGroup('gAnalisis')">
-        <span class="nav-icon">📊</span>
-        <span>Análisis</span>
+      <button class="nav-group-header" onclick="toggleNavGroup('gVender')">
+        <span class="nav-icon">💰</span>
+        <span>Vender</span>
         <span class="nav-chevron">▾</span>
       </button>
-      <div class="nav-group-items" id="gAnalisis">
-        <button data-screen="dashboard" onclick="navTo('dashboard')">
-          <span class="nav-icon">📊</span> Dashboard
+      <div class="nav-group-items" id="gVender">
+        <button data-screen="ventas" onclick="navTo('ventas')">
+          <span class="nav-icon">🧾</span> Ventas
         </button>
-        <button data-screen="reportes" onclick="navTo('reportes')">
-          <span class="nav-icon">📈</span> Reportes
+        <button data-screen="clientes" onclick="navTo('clientes')">
+          <span class="nav-icon">👥</span> Clientes
         </button>
       </div>
     </div>
 
-    <!-- Inventario: Productos + Insumos -->
+    <!-- Inventario: Productos + Insumos* + Producción* -->
     <div class="nav-group">
       <button class="nav-group-header" onclick="toggleNavGroup('gInventario')">
         <span class="nav-icon">📦</span>
@@ -1882,33 +1882,31 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
         <button id="navInsumos" data-screen="insumos" onclick="navTo('insumos')">
           <span class="nav-icon">🧂</span> Insumos
         </button>
+        <button id="navProduccion" data-screen="produccion" onclick="navTo('produccion')">
+          <span class="nav-icon">👨‍🍳</span> Producción
+        </button>
       </div>
     </div>
 
-    <!-- Operaciones: Ventas + Gastos + Clientes -->
+    <!-- Reportes: Dashboard + Reportes + Gastos -->
     <div class="nav-group">
-      <button class="nav-group-header" onclick="toggleNavGroup('gOperaciones')">
-        <span class="nav-icon">💼</span>
-        <span>Operaciones</span>
+      <button class="nav-group-header" onclick="toggleNavGroup('gReportes')">
+        <span class="nav-icon">📊</span>
+        <span>Reportes</span>
         <span class="nav-chevron">▾</span>
       </button>
-      <div class="nav-group-items" id="gOperaciones">
-        <button data-screen="ventas" onclick="navTo('ventas')">
-          <span class="nav-icon">💰</span> Ventas
+      <div class="nav-group-items" id="gReportes">
+        <button data-screen="dashboard" onclick="navTo('dashboard')">
+          <span class="nav-icon">🏠</span> Dashboard
+        </button>
+        <button data-screen="reportes" onclick="navTo('reportes')">
+          <span class="nav-icon">📈</span> Reportes
         </button>
         <button data-screen="gastos" onclick="navTo('gastos')">
           <span class="nav-icon">💸</span> Gastos
         </button>
-        <button data-screen="clientes" onclick="navTo('clientes')">
-          <span class="nav-icon">👥</span> Clientes
-        </button>
       </div>
     </div>
-
-    <!-- Producción (standalone) -->
-    <button id="navProduccion" data-screen="produccion" onclick="navTo('produccion')">
-      <span class="nav-icon">👨‍🍳</span> Producción
-    </button>
 
     <!-- Configuración: Recursos + Sucursales -->
     <div class="nav-group">
@@ -2820,7 +2818,7 @@ let fiadoClienteActual = null;
 
 const API = "";
 
-const SCREEN_TITLES = { ia: "Asistente IA", dashboard: "Dashboard", inventario: "Inventario", ventas: "Ventas", clientes: "Clientes", reportes: "Reportes", gastos: "Gastos", insumos: "Insumos", produccion: "Producción", recursos: "Recursos", sucursales: "Sucursales" };
+const SCREEN_TITLES = { ia: "Asistente IA", dashboard: "Dashboard", inventario: "Inventario", ventas: "Ventas", clientes: "Clientes", reportes: "Reportes", gastos: "Gastos", insumos: "Insumos", produccion: "Producción", recursos: "Recursos", sucursales: "Sucursales", pedidos: "Pedidos", fiado: "Fiado" };
 
 // ─── HELPERS ────────────────────────────────────────────────────────────────
 
@@ -2859,13 +2857,14 @@ function handleUnauthorized() {
 // ─── SIDEBAR ACCORDION ───────────────────────────────────────────────────────
 
 const SCREEN_GROUP_MAP = {
-  dashboard:  "gAnalisis",
-  reportes:   "gAnalisis",
+  ventas:     "gVender",
+  clientes:   "gVender",
   inventario: "gInventario",
   insumos:    "gInventario",
-  ventas:     "gOperaciones",
-  gastos:     "gOperaciones",
-  clientes:   "gOperaciones",
+  produccion: "gInventario",
+  dashboard:  "gReportes",
+  reportes:   "gReportes",
+  gastos:     "gReportes",
   recursos:   "gConfig",
   sucursales: "gConfig",
 };
