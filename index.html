@@ -2004,16 +2004,9 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
           <option value="ml">ml</option>
         </select>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-        <div>
-          <div style="font-size:11px;color:#86efac;opacity:0.75;margin-bottom:4px;">Costo por <span id="costoUnidadLabel">u</span> ($)</div>
-          <input id="costo" type="number" min="0" step="0.01" placeholder="0.00" oninput="onCostoUnitChange()">
-        </div>
-        <div>
-          <div style="font-size:11px;color:#86efac;opacity:0.75;margin-bottom:4px;">Costo del lote ($) <span style="opacity:0.55;">÷ stock</span></div>
-          <input id="costoLote" type="number" min="0" step="0.01" placeholder="Ej: 8000 para 25kg" oninput="onCostoLoteChange()">
-        </div>
-      </div>
+      <div style="font-size:11px;color:#86efac;opacity:0.75;margin-bottom:4px;">Costo del lote ($)</div>
+      <input id="costoLote" type="number" min="0" step="0.01" placeholder="Ej: $8000 para 25 kg" oninput="onCostoLoteChange()">
+      <div id="costoUnitDisplay" style="font-size:12px;color:rgba(254,243,199,0.38);margin-top:4px;margin-bottom:10px;min-height:16px;"></div>
       <input id="venta"  type="number" min="0" step="0.01" placeholder="Precio de venta por unidad ($)">
       <button class="action" id="btnAgregar" onclick="agregarProducto()">Agregar</button>
       <div id="respuestaNegocio"></div>
@@ -2344,16 +2337,9 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
           <option value="u">u</option>
         </select>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-        <div>
-          <div style="font-size:11px;color:#86efac;opacity:0.75;margin-bottom:4px;">Costo por <span id="insCostoUnidadLabel">kg</span> ($)</div>
-          <input id="insCosto" type="number" min="0" step="0.01" placeholder="0.00" oninput="onInsCostoUnitChange()">
-        </div>
-        <div>
-          <div style="font-size:11px;color:#86efac;opacity:0.75;margin-bottom:4px;">Costo de la compra ($) <span style="opacity:0.55;">÷ stock</span></div>
-          <input id="insCompra" type="number" min="0" step="0.01" placeholder="Ej: 5000 por 25kg" oninput="onInsCompraChange()">
-        </div>
-      </div>
+      <div style="font-size:11px;color:#86efac;opacity:0.75;margin-bottom:4px;">Costo de la compra ($)</div>
+      <input id="insCompra" type="number" min="0" step="0.01" placeholder="Ej: $5000 por 25 kg" oninput="onInsCompraChange()">
+      <div id="insCostoDisplay" style="font-size:12px;color:rgba(254,243,199,0.38);margin-top:4px;margin-bottom:10px;min-height:16px;"></div>
       <button class="action" id="btnAgregarInsumo" onclick="agregarInsumo()">Agregar Insumo</button>
       <div id="respuestaInsumo"></div>
     </div>
@@ -2563,14 +2549,9 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
       </select>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-      <div>
-        <div style="font-size:11px;color:#86efac;opacity:0.75;margin-bottom:4px;">Costo por <span id="editInsCostoUnidadLabel">kg</span> ($)</div>
-        <input id="editInsCosto" type="number" min="0" step="0.01" placeholder="0.00" oninput="onEditInsCostoUnitChange()">
-      </div>
-      <div>
-        <div style="font-size:11px;color:#86efac;opacity:0.75;margin-bottom:4px;">Costo de la compra ($) <span style="opacity:0.55;">÷ stock</span></div>
-        <input id="editInsCompra" type="number" min="0" step="0.01" placeholder="Ej: 5000 por 25kg" oninput="onEditInsCompraChange()">
-      </div>
+      <div style="font-size:11px;color:#86efac;opacity:0.75;margin-bottom:4px;">Costo de la compra ($)</div>
+      <input id="editInsCompra" type="number" min="0" step="0.01" placeholder="Ej: $5000 por 25 kg" oninput="onEditInsCompraChange()">
+      <div id="editInsCostoDisplay" style="font-size:12px;color:rgba(254,243,199,0.38);margin-top:4px;margin-bottom:10px;min-height:16px;"></div>
     </div>
     <div style="margin-top:10px;border-top:1px solid rgba(245,158,11,0.15);padding-top:12px;">
       <div style="font-size:11px;color:#fcd34d;opacity:0.55;margin-bottom:8px;letter-spacing:0.5px;">RESTOCK AUTOMÁTICO</div>
@@ -2738,16 +2719,9 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
         <option value="ml">ml</option>
       </select>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-      <div>
-        <div style="font-size:11px;color:#86efac;opacity:0.75;margin-bottom:4px;">Costo por <span id="editCostoUnidadLabel">u</span> ($)</div>
-        <input id="editCosto" type="number" min="0" step="0.01" placeholder="0.00" oninput="onEditCostoUnitChange()">
-      </div>
-      <div>
-        <div style="font-size:11px;color:#86efac;opacity:0.75;margin-bottom:4px;">Costo del lote ($) <span style="opacity:0.55;">÷ stock</span></div>
-        <input id="editCostoLote" type="number" min="0" step="0.01" placeholder="Ej: 8000 para 25kg" oninput="onEditCostoLoteChange()">
-      </div>
-    </div>
+    <div style="font-size:11px;color:#86efac;opacity:0.75;margin-bottom:4px;">Costo del lote ($)</div>
+    <input id="editCostoLote" type="number" min="0" step="0.01" placeholder="Ej: $8000 para 25 kg" oninput="onEditCostoLoteChange()">
+    <div id="editCostoUnitDisplay" style="font-size:12px;color:rgba(254,243,199,0.38);margin-top:4px;margin-bottom:10px;min-height:16px;"></div>
     <input id="editVenta"  type="number" min="0" step="0.01" placeholder="Precio de venta ($)">
     <div class="modal-actions">
       <button class="action"           onclick="guardarEdicion()">Guardar</button>
@@ -3273,86 +3247,44 @@ function animarEntero(id, valor) {
 
 // ─── COSTO LOTE SYNC (add form) ──────────────────────────────────────────────
 
-function onUnidadChange() {
-  const u = document.getElementById("productoUnidad").value || "u";
-  document.getElementById("costoUnidadLabel").textContent = u;
+// ─── COSTO LOTE helpers ───────────────────────────────────────────────────────
+
+function _calcUnitDisplay(lote, stock, unidad) {
+  if (!(lote > 0)) return "";
+  if (!(stock > 0)) return `$${lote.toFixed(2)} (sin stock)`;
+  return `= $${(lote / stock).toFixed(4)} / ${unidad}`;
 }
 
-function onStockChange() {
-  // If lote cost is filled, recalculate unit cost
-  const stock = parseFloat(document.getElementById("stock").value);
-  const lote  = parseFloat(document.getElementById("costoLote").value);
-  if (!isNaN(lote) && lote >= 0 && !isNaN(stock) && stock > 0) {
-    document.getElementById("costo").value = (lote / stock).toFixed(4);
-  }
-}
-
-function onCostoUnitChange() {
-  const stock = parseFloat(document.getElementById("stock").value);
-  const costo = parseFloat(document.getElementById("costo").value);
-  if (!isNaN(stock) && stock > 0 && !isNaN(costo)) {
-    document.getElementById("costoLote").value = (costo * stock).toFixed(2);
-  } else {
-    document.getElementById("costoLote").value = "";
-  }
-}
-
+function onUnidadChange()    { onCostoLoteChange(); }
+function onStockChange()     { onCostoLoteChange(); }
 function onCostoLoteChange() {
-  const stock = parseFloat(document.getElementById("stock").value);
-  const lote  = parseFloat(document.getElementById("costoLote").value);
-  if (!isNaN(stock) && stock > 0 && !isNaN(lote)) {
-    document.getElementById("costo").value = (lote / stock).toFixed(4);
-  } else {
-    document.getElementById("costo").value = "";
-  }
+  const lote   = parseFloat(document.getElementById("costoLote").value) || 0;
+  const stock  = parseFloat(document.getElementById("stock").value)     || 0;
+  const unidad = document.getElementById("productoUnidad").value        || "u";
+  document.getElementById("costoUnitDisplay").textContent = _calcUnitDisplay(lote, stock, unidad);
 }
 
-// ─── COSTO LOTE SYNC (edit modal) ────────────────────────────────────────────
-
-function onEditUnidadChange() {
-  const u = document.getElementById("editUnidad").value || "u";
-  document.getElementById("editCostoUnidadLabel").textContent = u;
-}
-
-function onEditStockChange() {
-  const stock = parseFloat(document.getElementById("editStock").value);
-  const lote  = parseFloat(document.getElementById("editCostoLote").value);
-  if (!isNaN(lote) && lote >= 0 && !isNaN(stock) && stock > 0) {
-    document.getElementById("editCosto").value = (lote / stock).toFixed(4);
-  }
-}
-
-function onEditCostoUnitChange() {
-  const stock = parseFloat(document.getElementById("editStock").value);
-  const costo = parseFloat(document.getElementById("editCosto").value);
-  if (!isNaN(stock) && stock > 0 && !isNaN(costo)) {
-    document.getElementById("editCostoLote").value = (costo * stock).toFixed(2);
-  } else {
-    document.getElementById("editCostoLote").value = "";
-  }
-}
-
+function onEditUnidadChange()    { onEditCostoLoteChange(); }
+function onEditStockChange()     { onEditCostoLoteChange(); }
 function onEditCostoLoteChange() {
-  const stock = parseFloat(document.getElementById("editStock").value);
-  const lote  = parseFloat(document.getElementById("editCostoLote").value);
-  if (!isNaN(stock) && stock > 0 && !isNaN(lote)) {
-    document.getElementById("editCosto").value = (lote / stock).toFixed(4);
-  } else {
-    document.getElementById("editCosto").value = "";
-  }
+  const lote   = parseFloat(document.getElementById("editCostoLote").value) || 0;
+  const stock  = parseFloat(document.getElementById("editStock").value)      || 0;
+  const unidad = document.getElementById("editUnidad").value                 || "u";
+  document.getElementById("editCostoUnitDisplay").textContent = _calcUnitDisplay(lote, stock, unidad);
 }
 
 async function agregarProducto() {
-  const producto = document.getElementById("producto").value.trim();
-  const stock    = parseFloat(document.getElementById("stock").value);
-  const costo    = parseFloat(document.getElementById("costo").value);
-  const venta    = parseFloat(document.getElementById("venta").value);
-  const unidad   = document.getElementById("productoUnidad").value || "u";
+  const producto  = document.getElementById("producto").value.trim();
+  const stock     = parseFloat(document.getElementById("stock").value) || 0;
+  const costoLote = parseFloat(document.getElementById("costoLote").value) || 0;
+  const venta     = parseFloat(document.getElementById("venta").value);
+  const unidad    = document.getElementById("productoUnidad").value || "u";
+  const costo     = stock > 0 ? costoLote / stock : costoLote;
 
-  if (!producto)               { mostrarAlerta("respuestaNegocio", "El nombre del producto es requerido.", "error"); return; }
-  if (isNaN(stock)||stock<0)   { mostrarAlerta("respuestaNegocio", "El stock debe ser un número no negativo.", "error"); return; }
-  if (isNaN(costo)||costo<0)   { mostrarAlerta("respuestaNegocio", "El costo debe ser un número no negativo.", "error"); return; }
-  if (isNaN(venta)||venta<0)   { mostrarAlerta("respuestaNegocio", "El precio de venta debe ser un número no negativo.", "error"); return; }
+  if (!producto)             { mostrarAlerta("respuestaNegocio", "El nombre del producto es requerido.", "error"); return; }
+  if (stock < 0)             { mostrarAlerta("respuestaNegocio", "El stock debe ser un número no negativo.", "error"); return; }
+  if (costoLote < 0)         { mostrarAlerta("respuestaNegocio", "El costo debe ser un número no negativo.", "error"); return; }
+  if (isNaN(venta)||venta<0) { mostrarAlerta("respuestaNegocio", "El precio de venta debe ser un número no negativo.", "error"); return; }
 
   setLoading("btnAgregar", true);
   try {
@@ -3361,9 +3293,9 @@ async function agregarProducto() {
     const json = await res.json();
     if (res.ok) {
       mostrarAlerta("respuestaNegocio", json.respuesta, "info");
-      ["producto","stock","costo","costoLote","venta"].forEach(id => document.getElementById(id).value = "");
+      ["producto","stock","costoLote","venta"].forEach(id => document.getElementById(id).value = "");
       document.getElementById("productoUnidad").value = "u";
-      document.getElementById("costoUnidadLabel").textContent = "u";
+      document.getElementById("costoUnitDisplay").textContent = "";
       await cargarProductos();
     } else {
       mostrarAlerta("respuestaNegocio", json.msg, "error");
@@ -3488,31 +3420,34 @@ function abrirEdicion(id) {
   const p = productos.find(x => x.id === id);
   if (!p) return;
   editandoId = id;
-  document.getElementById("editNombre").value     = p.producto;
-  document.getElementById("editStock").value      = p.stock;
-  document.getElementById("editCosto").value      = p.costo;
-  document.getElementById("editVenta").value      = p.venta;
-  const unidad = p.unidad || "u";
-  document.getElementById("editUnidad").value     = unidad;
-  document.getElementById("editCostoUnidadLabel").textContent = unidad;
-  document.getElementById("editCostoLote").value  = p.stock > 0 ? (p.costo * p.stock).toFixed(2) : "";
+  const unidad    = p.unidad || "u";
+  const costoLote = p.stock > 0 ? (p.costo * p.stock).toFixed(2) : "";
+  document.getElementById("editNombre").value    = p.producto;
+  document.getElementById("editStock").value     = p.stock;
+  document.getElementById("editVenta").value     = p.venta;
+  document.getElementById("editUnidad").value    = unidad;
+  document.getElementById("editCostoLote").value = costoLote;
+  document.getElementById("editCostoUnitDisplay").textContent =
+    _calcUnitDisplay(parseFloat(costoLote) || 0, p.stock, unidad);
   limpiarAlerta("respuestaModal");
   document.getElementById("modalEditar").classList.add("open");
 }
 function cerrarModal() {
   editandoId = null;
   document.getElementById("editCostoLote").value = "";
+  document.getElementById("editCostoUnitDisplay").textContent = "";
   document.getElementById("modalEditar").classList.remove("open");
 }
 async function guardarEdicion() {
-  const nombre = document.getElementById("editNombre").value.trim();
-  const stock  = parseFloat(document.getElementById("editStock").value);
-  const costo  = parseFloat(document.getElementById("editCosto").value);
-  const venta  = parseFloat(document.getElementById("editVenta").value);
-  const unidad = document.getElementById("editUnidad").value || "u";
+  const nombre    = document.getElementById("editNombre").value.trim();
+  const stock     = parseFloat(document.getElementById("editStock").value) || 0;
+  const costoLote = parseFloat(document.getElementById("editCostoLote").value) || 0;
+  const venta     = parseFloat(document.getElementById("editVenta").value);
+  const unidad    = document.getElementById("editUnidad").value || "u";
+  const costo     = stock > 0 ? costoLote / stock : costoLote;
   if (!nombre)               { mostrarAlerta("respuestaModal","El nombre es requerido.","error"); return; }
-  if (isNaN(stock)||stock<0) { mostrarAlerta("respuestaModal","Stock inválido.","error"); return; }
-  if (isNaN(costo)||costo<0) { mostrarAlerta("respuestaModal","Costo inválido.","error"); return; }
+  if (stock < 0)             { mostrarAlerta("respuestaModal","Stock inválido.","error"); return; }
+  if (costoLote < 0)         { mostrarAlerta("respuestaModal","Costo inválido.","error"); return; }
   if (isNaN(venta)||venta<0) { mostrarAlerta("respuestaModal","Precio de venta inválido.","error"); return; }
   try {
     const res = await fetch(`${API}/api/productos/${editandoId}`, { method:"PUT", headers:authHeaders(), body:JSON.stringify({producto:nombre,stock,costo,venta,unidad}) });
@@ -3607,83 +3542,34 @@ function formatNum(n) {
 
 // ─── COSTO COMPRA SYNC (insumos add) ─────────────────────────────────────────
 
-function onInsUnidadChange() {
-  const u = document.getElementById("insUnidad").value || "kg";
-  document.getElementById("insCostoUnidadLabel").textContent = u;
+function onInsUnidadChange()  { onInsCompraChange(); }
+function onInsStockChange()   { onInsCompraChange(); }
+function onInsCompraChange()  {
+  const compra = parseFloat(document.getElementById("insCompra").value) || 0;
+  const stock  = parseFloat(document.getElementById("insStock").value)  || 0;
+  const unidad = document.getElementById("insUnidad").value             || "kg";
+  document.getElementById("insCostoDisplay").textContent = _calcUnitDisplay(compra, stock, unidad);
 }
 
-function onInsStockChange() {
-  const stock   = parseFloat(document.getElementById("insStock").value);
-  const compra  = parseFloat(document.getElementById("insCompra").value);
-  if (!isNaN(compra) && compra >= 0 && !isNaN(stock) && stock > 0) {
-    document.getElementById("insCosto").value = (compra / stock).toFixed(4);
-  }
-}
-
-function onInsCostoUnitChange() {
-  const stock  = parseFloat(document.getElementById("insStock").value);
-  const costo  = parseFloat(document.getElementById("insCosto").value);
-  if (!isNaN(stock) && stock > 0 && !isNaN(costo)) {
-    document.getElementById("insCompra").value = (costo * stock).toFixed(2);
-  } else {
-    document.getElementById("insCompra").value = "";
-  }
-}
-
-function onInsCompraChange() {
-  const stock  = parseFloat(document.getElementById("insStock").value);
-  const compra = parseFloat(document.getElementById("insCompra").value);
-  if (!isNaN(stock) && stock > 0 && !isNaN(compra)) {
-    document.getElementById("insCosto").value = (compra / stock).toFixed(4);
-  } else {
-    document.getElementById("insCosto").value = "";
-  }
-}
-
-// ─── COSTO COMPRA SYNC (insumos edit) ────────────────────────────────────────
-
-function onEditInsUnidadChange() {
-  const u = document.getElementById("editInsUnidad").value || "kg";
-  document.getElementById("editInsCostoUnidadLabel").textContent = u;
-}
-
-function onEditInsStockChange() {
-  const stock  = parseFloat(document.getElementById("editInsStock").value);
-  const compra = parseFloat(document.getElementById("editInsCompra").value);
-  if (!isNaN(compra) && compra >= 0 && !isNaN(stock) && stock > 0) {
-    document.getElementById("editInsCosto").value = (compra / stock).toFixed(4);
-  }
-}
-
-function onEditInsCostoUnitChange() {
-  const stock = parseFloat(document.getElementById("editInsStock").value);
-  const costo = parseFloat(document.getElementById("editInsCosto").value);
-  if (!isNaN(stock) && stock > 0 && !isNaN(costo)) {
-    document.getElementById("editInsCompra").value = (costo * stock).toFixed(2);
-  } else {
-    document.getElementById("editInsCompra").value = "";
-  }
-}
-
-function onEditInsCompraChange() {
-  const stock  = parseFloat(document.getElementById("editInsStock").value);
-  const compra = parseFloat(document.getElementById("editInsCompra").value);
-  if (!isNaN(stock) && stock > 0 && !isNaN(compra)) {
-    document.getElementById("editInsCosto").value = (compra / stock).toFixed(4);
-  } else {
-    document.getElementById("editInsCosto").value = "";
-  }
+function onEditInsUnidadChange()  { onEditInsCompraChange(); }
+function onEditInsStockChange()   { onEditInsCompraChange(); }
+function onEditInsCompraChange()  {
+  const compra = parseFloat(document.getElementById("editInsCompra").value) || 0;
+  const stock  = parseFloat(document.getElementById("editInsStock").value)  || 0;
+  const unidad = document.getElementById("editInsUnidad").value             || "kg";
+  document.getElementById("editInsCostoDisplay").textContent = _calcUnitDisplay(compra, stock, unidad);
 }
 
 async function agregarInsumo() {
-  const nombre = document.getElementById("insNombre").value.trim();
-  const stock  = parseFloat(document.getElementById("insStock").value);
-  const unidad = document.getElementById("insUnidad").value;
-  const costo  = parseFloat(document.getElementById("insCosto").value);
+  const nombre  = document.getElementById("insNombre").value.trim();
+  const stock   = parseFloat(document.getElementById("insStock").value) || 0;
+  const unidad  = document.getElementById("insUnidad").value;
+  const compra  = parseFloat(document.getElementById("insCompra").value) || 0;
+  const costo   = stock > 0 ? compra / stock : compra;
   limpiarAlerta("respuestaInsumo");
-  if (!nombre)                { mostrarAlerta("respuestaInsumo","El nombre es requerido.","error"); return; }
-  if (isNaN(stock)||stock<0)  { mostrarAlerta("respuestaInsumo","Stock inválido.","error"); return; }
-  if (isNaN(costo)||costo<0)  { mostrarAlerta("respuestaInsumo","Costo inválido.","error"); return; }
+  if (!nombre)       { mostrarAlerta("respuestaInsumo","El nombre es requerido.","error"); return; }
+  if (stock < 0)     { mostrarAlerta("respuestaInsumo","Stock inválido.","error"); return; }
+  if (compra < 0)    { mostrarAlerta("respuestaInsumo","Costo inválido.","error"); return; }
   setLoading("btnAgregarInsumo", true);
   try {
     const res  = await fetch(`${API}/api/insumos`, { method:"POST", headers:authHeaders(), body:JSON.stringify({nombre,stock,unidad,costo_unitario:costo}) });
@@ -3691,7 +3577,8 @@ async function agregarInsumo() {
     const json = await res.json();
     if (res.ok) {
       mostrarAlerta("respuestaInsumo","✓ " + json.msg,"success");
-      ["insNombre","insStock","insCosto","insCompra"].forEach(id => document.getElementById(id).value="");
+      ["insNombre","insStock","insCompra"].forEach(id => document.getElementById(id).value="");
+      document.getElementById("insCostoDisplay").textContent = "";
       await cargarInsumos();
     } else { mostrarAlerta("respuestaInsumo",json.msg,"error"); }
   } catch { mostrarAlerta("respuestaInsumo","Error de conexión.","error"); }
@@ -3699,15 +3586,17 @@ async function agregarInsumo() {
 }
 
 function abrirEditInsumo(id) {
-  const ins = insumos.find(x => x.id === id);
+  const ins    = insumos.find(x => x.id === id);
   if (!ins) return;
   editandoInsumoId = id;
+  const unidad  = ins.unidad || "kg";
+  const compra  = ins.stock > 0 ? (ins.costo_unitario * ins.stock).toFixed(2) : "";
   document.getElementById("editInsNombre").value = ins.nombre;
   document.getElementById("editInsStock").value  = ins.stock;
-  document.getElementById("editInsUnidad").value = ins.unidad;
-  document.getElementById("editInsCostoUnidadLabel").textContent = ins.unidad || "kg";
-  document.getElementById("editInsCosto").value  = ins.costo_unitario;
-  document.getElementById("editInsCompra").value = ins.stock > 0 ? (ins.costo_unitario * ins.stock).toFixed(2) : "";
+  document.getElementById("editInsUnidad").value = unidad;
+  document.getElementById("editInsCompra").value = compra;
+  document.getElementById("editInsCostoDisplay").textContent =
+    _calcUnitDisplay(parseFloat(compra) || 0, ins.stock, unidad);
   document.getElementById("editInsDias").value   = ins.dias_restock || "";
   document.getElementById("editInsQty").value    = ins.qty_restock  || "";
   limpiarAlerta("respuestaModalInsumo");
@@ -3717,19 +3606,21 @@ function abrirEditInsumo(id) {
 function cerrarModalInsumo() {
   editandoInsumoId = null;
   document.getElementById("editInsCompra").value = "";
+  document.getElementById("editInsCostoDisplay").textContent = "";
   document.getElementById("modalEditInsumo").classList.remove("open");
 }
 
 async function guardarEdicionInsumo() {
-  const nombre = document.getElementById("editInsNombre").value.trim();
-  const stock  = parseFloat(document.getElementById("editInsStock").value);
-  const unidad = document.getElementById("editInsUnidad").value;
-  const costo  = parseFloat(document.getElementById("editInsCosto").value);
-  const dias   = document.getElementById("editInsDias").value.trim();
-  const qty    = document.getElementById("editInsQty").value.trim();
-  if (!nombre)               { mostrarAlerta("respuestaModalInsumo","El nombre es requerido.","error"); return; }
-  if (isNaN(stock)||stock<0) { mostrarAlerta("respuestaModalInsumo","Stock inválido.","error"); return; }
-  if (isNaN(costo)||costo<0) { mostrarAlerta("respuestaModalInsumo","Costo inválido.","error"); return; }
+  const nombre  = document.getElementById("editInsNombre").value.trim();
+  const stock   = parseFloat(document.getElementById("editInsStock").value) || 0;
+  const unidad  = document.getElementById("editInsUnidad").value;
+  const compra  = parseFloat(document.getElementById("editInsCompra").value) || 0;
+  const costo   = stock > 0 ? compra / stock : compra;
+  const dias    = document.getElementById("editInsDias").value.trim();
+  const qty     = document.getElementById("editInsQty").value.trim();
+  if (!nombre)   { mostrarAlerta("respuestaModalInsumo","El nombre es requerido.","error"); return; }
+  if (stock < 0) { mostrarAlerta("respuestaModalInsumo","Stock inválido.","error"); return; }
+  if (compra < 0){ mostrarAlerta("respuestaModalInsumo","Costo inválido.","error"); return; }
   const body = { nombre, stock, unidad, costo_unitario: costo };
   if (dias) body.dias_restock = parseInt(dias);
   if (qty)  body.qty_restock  = parseFloat(qty);
