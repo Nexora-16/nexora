@@ -30,29 +30,22 @@ def registrar_produccion():
         return jsonify({"msg": "Producto no encontrado"}), 404
 
     items = RecipeItem.query.filter_by(product_id=product_id).all()
+    consumo = []
 
     if items:
-        faltantes = []
+        insumo_map = {
+            item.insumo_id: Insumo.query.filter_by(id=item.insumo_id, user_id=g.owner_id).first()
+            for item in items
+        }
+        costo = 0.0
         for item in items:
-            ins = Insumo.query.filter_by(id=item.insumo_id, user_id=g.owner_id).first()
+            ins = insumo_map.get(item.insumo_id)
             if not ins:
                 continue
-            necesario = item.cantidad * cantidad
-            if ins.stock < necesario:
-                faltantes.append(f"{ins.nombre}: necesitás {necesario:.3f} {ins.unidad}, tenés {ins.stock:.3f}")
-        if faltantes:
-            return jsonify({"msg": "Stock de insumos insuficiente:\n" + "\n".join(faltantes)}), 400
+            usado = round(item.cantidad * cantidad, 6)
+            costo += (ins.costo_unitario or 0) * item.cantidad
+            consumo.append({"nombre": ins.nombre, "usado": usado, "unidad": ins.unidad})
 
-        for item in items:
-            ins = Insumo.query.filter_by(id=item.insumo_id, user_id=g.owner_id).first()
-            if ins:
-                ins.stock = round(ins.stock - item.cantidad * cantidad, 6)
-
-        costo = sum(
-            (Insumo.query.filter_by(id=item.insumo_id, user_id=g.owner_id).first().costo_unitario or 0) * item.cantidad
-            for item in items
-            if Insumo.query.filter_by(id=item.insumo_id, user_id=g.owner_id).first()
-        )
         p.costo = round(costo, 4)
 
     p.stock = round((p.stock or 0) + cantidad, 6)
@@ -67,6 +60,7 @@ def registrar_produccion():
         "unidad":          p.unidad or "u",
         "con_receta":      bool(items),
         "costo_calculado": p.costo,
+        "consumo":         consumo,
     })
 
 

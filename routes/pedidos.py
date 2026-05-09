@@ -38,8 +38,12 @@ def registrar_pedido():
         return jsonify({"msg": "Cliente requerido"}), 400
     if not product_id:
         return jsonify({"msg": "Producto requerido"}), 400
-    if not isinstance(cantidad, int) or cantidad <= 0:
-        return jsonify({"msg": "La cantidad debe ser un entero positivo"}), 400
+    try:
+        cantidad = float(cantidad)
+    except (TypeError, ValueError):
+        cantidad = None
+    if cantidad is None or cantidad <= 0:
+        return jsonify({"msg": "La cantidad debe ser un número positivo"}), 400
     if precio is None or float(precio) < 0:
         return jsonify({"msg": "El precio debe ser un número no negativo"}), 400
 
@@ -50,10 +54,8 @@ def registrar_pedido():
     p = Product.query.filter_by(id=product_id, user_id=g.owner_id).first()
     if not p:
         return jsonify({"msg": "Producto no encontrado"}), 404
-    if p.stock < cantidad:
-        return jsonify({"msg": f"Stock insuficiente. Disponible: {p.stock}"}), 400
 
-    p.stock -= cantidad
+    p.stock = round((p.stock or 0) - cantidad, 6)
     attrs = scoped_attrs()
     pedido = Pedido(
         client_id=c.id, client_nombre=c.nombre,

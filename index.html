@@ -1166,22 +1166,106 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
   border-bottom: 1px solid rgba(245,158,11,0.2);
   padding: 14px 20px;
   display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0;
 }
 .caja-branch-name { font-size: 17px; font-weight: 700; color: #fbbf24; }
-.caja-user-tag { font-size: 12px; color: #fcd34d; opacity: 0.65; margin-top: 2px; }
-.caja-body { flex: 1; padding: 18px; max-width: 700px; margin: 0 auto; width: 100%; }
-.caja-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px; }
-.caja-prod-card {
-  background: rgba(20,8,0,0.55); border: 1px solid rgba(245,158,11,0.2);
-  border-radius: 14px; padding: 14px 12px; text-align: center;
-  cursor: pointer; transition: background 0.18s, border-color 0.18s;
+.caja-user-tag    { font-size: 12px; color: #fcd34d; opacity: 0.65; margin-top: 2px; }
+.caja-body        { flex: 1; padding: 16px; max-width: 480px; margin: 0 auto; width: 100%; }
+
+/* ── Calculadora display ── */
+.calc-display {
+  background: rgba(10,4,0,0.85);
+  border: 1px solid rgba(245,158,11,0.22);
+  border-radius: 18px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  min-height: 110px;
 }
-.caja-prod-card:hover { background: rgba(245,158,11,0.1); border-color: rgba(245,158,11,0.45); }
-.caja-prod-card.sin-stock { opacity: 0.4; cursor: not-allowed; }
-.caja-prod-nombre { font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #fef3c7; }
-.caja-prod-stock  { font-size: 24px; font-weight: 800; color: #fbbf24; }
-.caja-prod-label  { font-size: 10px; color: #fcd34d; opacity: 0.6; margin-top: 2px; }
-.caja-prod-precio { font-size: 12px; color: #fde68a; margin-top: 4px; }
+.calc-chips {
+  display: flex; flex-wrap: wrap; gap: 6px; min-height: 28px; margin-bottom: 8px;
+}
+.calc-chip {
+  font-size: 12px; padding: 3px 10px; border-radius: 20px;
+  background: rgba(245,158,11,0.13); border: 1px solid rgba(245,158,11,0.28);
+  color: #fbbf24;
+}
+.calc-input-row {
+  font-size: 44px; font-weight: 800; color: #fef3c7;
+  text-align: right; line-height: 1; letter-spacing: -1px; min-height: 52px;
+}
+.calc-total-row {
+  text-align: right; font-size: 15px; font-weight: 700; color: #f59e0b;
+  margin-top: 8px; padding-top: 8px;
+  border-top: 1px solid rgba(245,158,11,0.15);
+}
+
+/* ── Teclado ── */
+.calc-keypad {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.calc-key {
+  height: 66px; font-size: 24px; font-weight: 700;
+  border: 1px solid rgba(245,158,11,0.14);
+  background: rgba(20,8,0,0.72);
+  color: #fef3c7; border-radius: 14px;
+  cursor: pointer; font-family: inherit;
+  transition: background 0.12s, transform 0.08s;
+  display: flex; align-items: center; justify-content: center;
+}
+.calc-key:active         { transform: scale(0.93); background: rgba(245,158,11,0.18); }
+.calc-key-add {
+  background: rgba(245,158,11,0.16);
+  border-color: rgba(245,158,11,0.4);
+  color: #fbbf24; font-size: 28px;
+  grid-row: span 2;
+}
+.calc-key-del            { background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.22); color: #f87171; }
+.calc-key-zero           { grid-column: span 2; }
+
+/* ── Botones de cierre ── */
+.calc-close-btns {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 10px; margin-bottom: 12px;
+}
+.calc-close-btn {
+  height: 58px; border: none; border-radius: 14px;
+  font-size: 13px; font-weight: 700; cursor: pointer;
+  font-family: inherit; transition: opacity 0.2s, transform 0.1s;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+}
+.calc-close-btn .cb-icon  { font-size: 20px; }
+.calc-close-btn .cb-label { font-size: 11px; }
+.calc-close-btn:active    { transform: scale(0.96); }
+.calc-close-btn:disabled  { opacity: 0.35; cursor: not-allowed; }
+.calc-btn-efectivo      { background: linear-gradient(135deg, #16a34a, #15803d); color: #fff; }
+.calc-btn-transferencia { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff; }
+.calc-btn-tarjeta       { background: linear-gradient(135deg, #7c3aed, #6d28d9); color: #fff; }
+
+/* ── Anular ── */
+.calc-anular {
+  width: 100%; padding: 11px; margin-bottom: 20px;
+  border: 1px solid rgba(239,68,68,0.25);
+  background: rgba(239,68,68,0.07); color: #f87171;
+  border-radius: 12px; font-size: 13px; cursor: pointer;
+  font-family: inherit; transition: background 0.18s;
+}
+.calc-anular:hover { background: rgba(239,68,68,0.15); }
+
+/* ── Historial ── */
+.calc-hist-title {
+  font-size: 11px; font-weight: 700; color: #fcd34d;
+  text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;
+}
+.calc-hist-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 0; border-bottom: 1px solid rgba(245,158,11,0.07); font-size: 13px;
+}
+.calc-hist-row:last-child { border-bottom: none; }
+.calc-hist-monto { font-weight: 700; color: #fbbf24; }
+.calc-hist-meta  { font-size: 11px; color: rgba(254,243,199,0.45); margin-top: 2px; }
 /* ══════════════════════════════════════════════
    SUCURSALES (admin)
 ══════════════════════════════════════════════ */
@@ -2464,27 +2548,52 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
   </div>
   <div class="caja-body">
     <div id="cajaAlerta"></div>
-    <h3 style="margin-bottom:12px;font-size:15px;color:#86efac;">Tocá un producto para registrar una venta</h3>
-    <div class="caja-grid" id="cajaProductosGrid"></div>
-    <div class="card" id="cajaVentasHoyCard" style="display:none;">
-      <h3 style="margin-bottom:12px;">Ventas de hoy</h3>
-      <div id="cajaVentasHoyBody"></div>
-      <div id="cajaTotalHoy" style="margin-top:10px;font-weight:700;color:#4ade80;font-size:15px;"></div>
-    </div>
-  </div>
-</div>
 
-<!-- Modal cantidad caja -->
-<div class="modal-overlay" id="modalCaja">
-  <div class="modal-box">
-    <h3 id="modalCajaTitle">Registrar venta</h3>
-    <p id="modalCajaPrecio" style="color:#86efac;margin-bottom:12px;"></p>
-    <input id="modalCajaCantidad" type="number" min="1" step="1" placeholder="Cantidad" value="1">
-    <div class="modal-actions">
-      <button class="action" onclick="confirmarVentaCaja()">Vender</button>
-      <button class="action secondary" onclick="cerrarModalCaja()">Cancelar</button>
+    <!-- Display calculadora -->
+    <div class="calc-display">
+      <div class="calc-chips" id="calcChips"></div>
+      <div class="calc-input-row" id="calcInputRow">$0</div>
+      <div class="calc-total-row" id="calcTotalRow">Total: $0</div>
     </div>
-    <div id="modalCajaResp"></div>
+
+    <!-- Teclado -->
+    <div class="calc-keypad">
+      <button class="calc-key" onclick="calcNum('7')">7</button>
+      <button class="calc-key" onclick="calcNum('8')">8</button>
+      <button class="calc-key" onclick="calcNum('9')">9</button>
+      <button class="calc-key calc-key-del" onclick="calcDel()">⌫</button>
+
+      <button class="calc-key" onclick="calcNum('4')">4</button>
+      <button class="calc-key" onclick="calcNum('5')">5</button>
+      <button class="calc-key" onclick="calcNum('6')">6</button>
+      <button class="calc-key calc-key-add" onclick="calcAdd()">+</button>
+
+      <button class="calc-key" onclick="calcNum('1')">1</button>
+      <button class="calc-key" onclick="calcNum('2')">2</button>
+      <button class="calc-key" onclick="calcNum('3')">3</button>
+
+      <button class="calc-key calc-key-zero" onclick="calcNum('0')">0</button>
+      <button class="calc-key" onclick="calcNum('.')">.</button>
+    </div>
+
+    <!-- Cerrar venta -->
+    <div class="calc-close-btns">
+      <button class="calc-close-btn calc-btn-efectivo" id="calcBtnEfectivo" onclick="cerrarVenta('efectivo')">
+        <span class="cb-icon">💵</span><span class="cb-label">Efectivo</span>
+      </button>
+      <button class="calc-close-btn calc-btn-transferencia" id="calcBtnTransferencia" onclick="cerrarVenta('transferencia')">
+        <span class="cb-icon">📱</span><span class="cb-label">Transferencia</span>
+      </button>
+      <button class="calc-close-btn calc-btn-tarjeta" id="calcBtnTarjeta" onclick="cerrarVenta('tarjeta')">
+        <span class="cb-icon">💳</span><span class="cb-label">Tarjeta</span>
+      </button>
+    </div>
+
+    <!-- Anular -->
+    <button class="calc-anular" onclick="anularUltimaVenta()">✕ Anular última venta</button>
+
+    <!-- Historial -->
+    <div id="calcHistorial"></div>
   </div>
 </div>
 
@@ -4781,83 +4890,113 @@ async function cargarSugerencias() {
 
 // ─── CAJA (modo empleado) ────────────────────────────────────────────────────
 
-async function cargarCaja() {
+// ── Calculadora Modo Caja ──────────────────────────────
+let calcBuffer = "";
+let calcItems  = [];
+let calcTotal  = 0;
+
+function calcNum(n) {
+  if (n === "." && calcBuffer.includes(".")) return;
+  if (calcBuffer === "0" && n !== ".") { calcBuffer = n; }
+  else { if (calcBuffer.length >= 9) return; calcBuffer += n; }
+  renderCalcDisplay();
+}
+
+function calcDel() {
+  calcBuffer = calcBuffer.slice(0, -1);
+  renderCalcDisplay();
+}
+
+function calcAdd() {
+  const val = parseFloat(calcBuffer);
+  if (!calcBuffer || isNaN(val) || val <= 0) return;
+  calcItems.push(val);
+  calcTotal = parseFloat(calcItems.reduce((s, v) => s + v, 0).toFixed(2));
+  calcBuffer = "";
+  renderCalcDisplay();
+}
+
+function renderCalcDisplay() {
+  const fmt = n => "$" + n.toLocaleString("es-AR", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  document.getElementById("calcChips").innerHTML =
+    calcItems.map(v => `<span class="calc-chip">${fmt(v)}</span>`).join("");
+  document.getElementById("calcInputRow").textContent =
+    calcBuffer ? "$" + calcBuffer : (calcTotal > 0 ? "" : "$0");
+  document.getElementById("calcTotalRow").textContent = `Total: ${fmt(calcTotal)}`;
+  const disabled = calcTotal <= 0 && !calcBuffer;
+  ["calcBtnEfectivo","calcBtnTransferencia","calcBtnTarjeta"].forEach(id => {
+    document.getElementById(id).disabled = disabled;
+  });
+}
+
+function calcClear() {
+  calcBuffer = ""; calcItems = []; calcTotal = 0;
+  renderCalcDisplay();
+}
+
+async function cerrarVenta(metodo) {
+  if (calcBuffer) {
+    const val = parseFloat(calcBuffer);
+    if (!isNaN(val) && val > 0) { calcItems.push(val); calcTotal = parseFloat(calcItems.reduce((s,v)=>s+v,0).toFixed(2)); calcBuffer = ""; }
+  }
+  if (calcTotal <= 0) { mostrarAlerta("cajaAlerta","Ingresá un monto primero.","error"); return; }
+  const monto = calcTotal;
   try {
-    const res = await fetch(`${API}/api/productos`, { headers: authHeaders() });
-    if (res.status === 401) { handleUnauthorized(); return; }
-    productos = res.ok ? await res.json() : [];
-    renderCajaGrid();
-    cargarVentasHoyCaja();
-  } catch { /* silencioso */ }
-}
-
-function renderCajaGrid() {
-  const grid = document.getElementById("cajaProductosGrid");
-  if (!productos.length) { grid.innerHTML = `<p style="color:#6ee7b7;opacity:0.6;">Sin productos disponibles.</p>`; return; }
-  grid.innerHTML = productos.map(p => `
-    <div class="caja-prod-card${p.stock <= 0 ? " sin-stock" : ""}"
-         onclick="${p.stock > 0 ? `abrirModalCaja(${p.id})` : ""}">
-      <div class="caja-prod-nombre">${escHtml(p.producto)}</div>
-      <div class="caja-prod-stock">${p.stock}</div>
-      <div class="caja-prod-label">en stock</div>
-      <div class="caja-prod-precio">$${p.venta.toFixed(2)}</div>
-    </div>`).join("");
-}
-
-function abrirModalCaja(prodId) {
-  cajaProdActual = productos.find(p => p.id === prodId);
-  if (!cajaProdActual) return;
-  document.getElementById("modalCajaTitle").textContent = cajaProdActual.producto;
-  document.getElementById("modalCajaPrecio").textContent = `$${cajaProdActual.venta.toFixed(2)} por unidad`;
-  document.getElementById("modalCajaCantidad").value = 1;
-  limpiarAlerta("modalCajaResp");
-  document.getElementById("modalCaja").classList.add("open");
-}
-function cerrarModalCaja() {
-  document.getElementById("modalCaja").classList.remove("open");
-  cajaProdActual = null;
-}
-
-async function confirmarVentaCaja() {
-  if (!cajaProdActual) return;
-  const cantidad = parseInt(document.getElementById("modalCajaCantidad").value);
-  if (!cantidad || cantidad <= 0) { mostrarAlerta("modalCajaResp", "Cantidad inválida.", "error"); return; }
-  try {
-    const res = await fetch(`${API}/api/ventas`, {
+    const res = await fetch(`${API}/api/caja`, {
       method: "POST", headers: authHeaders(),
-      body: JSON.stringify({ product_id: cajaProdActual.id, cantidad })
+      body: JSON.stringify({ monto, metodo_pago: metodo })
     });
     const json = await res.json();
     if (res.ok) {
-      cerrarModalCaja();
-      mostrarAlerta("cajaAlerta", `✔ ${cantidad} × ${escHtml(cajaProdActual.producto)} vendido`, "success");
+      const fmt = n => "$" + n.toLocaleString("es-AR");
+      const etiqueta = { efectivo:"Efectivo", transferencia:"Transferencia", tarjeta:"Tarjeta" }[metodo];
+      calcClear();
+      mostrarAlerta("cajaAlerta", `✔ ${fmt(monto)} — ${etiqueta}`, "success");
       setTimeout(() => limpiarAlerta("cajaAlerta"), 3000);
-      cargarCaja();
-    } else {
-      mostrarAlerta("modalCajaResp", json.msg, "error");
-    }
-  } catch { mostrarAlerta("modalCajaResp", "Error de conexión.", "error"); }
+      cargarHistorialCaja();
+    } else { mostrarAlerta("cajaAlerta", json.msg, "error"); }
+  } catch { mostrarAlerta("cajaAlerta","Error de conexión.","error"); }
 }
 
-async function cargarVentasHoyCaja() {
+async function anularUltimaVenta() {
+  if (!confirm("¿Anular la última venta de caja?")) return;
   try {
-    const res = await fetch(`${API}/api/ventas`, { headers: authHeaders() });
+    const res = await fetch(`${API}/api/caja/ultima`, { method: "DELETE", headers: authHeaders() });
+    const json = await res.json();
+    mostrarAlerta("cajaAlerta", res.ok ? "✔ Venta anulada" : json.msg, res.ok ? "success" : "error");
+    if (res.ok) { setTimeout(() => limpiarAlerta("cajaAlerta"), 3000); cargarHistorialCaja(); }
+  } catch { mostrarAlerta("cajaAlerta","Error de conexión.","error"); }
+}
+
+async function cargarHistorialCaja() {
+  try {
+    const res = await fetch(`${API}/api/caja/hoy`, { headers: authHeaders() });
     if (!res.ok) return;
     const ventas = await res.json();
-    const hoy = new Date().toLocaleDateString("es-AR", { day:"2-digit", month:"2-digit", year:"numeric" });
-    const hoyVentas = ventas.filter(v => v.created_at.startsWith(hoy.replace(/\//g, "/")));
-    const card = document.getElementById("cajaVentasHoyCard");
-    const body = document.getElementById("cajaVentasHoyBody");
-    if (!hoyVentas.length) { card.style.display = "none"; return; }
-    card.style.display = "block";
-    body.innerHTML = hoyVentas.map(v => `
-      <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(245,158,11,0.08);">
-        <span>${escHtml(v.nombre)} ×${v.cantidad}</span>
-        <span style="color:#fbbf24;">$${(v.precio * v.cantidad).toFixed(2)}</span>
-      </div>`).join("");
-    const total = hoyVentas.reduce((s, v) => s + v.precio * v.cantidad, 0);
-    document.getElementById("cajaTotalHoy").textContent = `Total hoy: $${total.toFixed(2)}`;
+    const el = document.getElementById("calcHistorial");
+    if (!ventas.length) { el.innerHTML = `<div class="calc-hist-title">Sin ventas hoy</div>`; return; }
+    const icon = { efectivo:"💵", transferencia:"📱", tarjeta:"💳" };
+    const fmt  = n => "$" + n.toLocaleString("es-AR");
+    const total = ventas.reduce((s,v) => s + v.monto, 0);
+    el.innerHTML = `
+      <div class="calc-hist-title">Últimas ventas</div>
+      ${ventas.slice(0,10).map(v=>`
+        <div class="calc-hist-row">
+          <div>
+            <span>${icon[v.metodo]||"💵"} ${escHtml(v.label)}</span>
+            <div class="calc-hist-meta">${v.hora}</div>
+          </div>
+          <div class="calc-hist-monto">${fmt(v.monto)}</div>
+        </div>`).join("")}
+      <div style="margin-top:10px;font-weight:700;color:#f59e0b;font-size:15px;text-align:right;">
+        Total hoy: ${fmt(total)}
+      </div>`;
   } catch { /* silencioso */ }
+}
+
+async function cargarCaja() {
+  calcClear();
+  cargarHistorialCaja();
 }
 
 

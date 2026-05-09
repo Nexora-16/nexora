@@ -93,6 +93,7 @@ try:
         from models.gasto import Gasto
         from models.fiado import Fiado
         from models.sucursal import Sucursal
+        from models.compra_insumo import CompraInsumo
         if _db_url.startswith("sqlite"):
             os.makedirs("instance", exist_ok=True)
         db.create_all()
@@ -115,6 +116,12 @@ try:
             "ALTER TABLE product ADD COLUMN IF NOT EXISTS rendimiento FLOAT",
             "ALTER TABLE product ADD COLUMN IF NOT EXISTS unidad VARCHAR(20) NOT NULL DEFAULT 'u'",
             "ALTER TABLE sale ADD COLUMN IF NOT EXISTS unidad VARCHAR(20)",
+            "ALTER TABLE insumo ADD COLUMN IF NOT EXISTS dias_restock INTEGER",
+            "ALTER TABLE insumo ADD COLUMN IF NOT EXISTS qty_restock FLOAT",
+            "ALTER TABLE insumo ADD COLUMN IF NOT EXISTS ultimo_pedido TIMESTAMP",
+            "ALTER TABLE compra_insumo ADD COLUMN IF NOT EXISTS estado VARCHAR(20) DEFAULT 'llegado'",
+            "ALTER TABLE compra_insumo ADD COLUMN IF NOT EXISTS fecha_esperada TIMESTAMP",
+            "ALTER TABLE sale ALTER COLUMN product_id DROP NOT NULL",
         ]
         # Type changes (safe: INTEGER fits in FLOAT with no data loss)
         type_migrations = [
