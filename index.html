@@ -2813,6 +2813,9 @@ let reporteChart       = null;
 let reportePeriodo     = 7;
 let fiadoTodos         = [];
 let fiadoClienteActual = null;
+let compras            = [];
+const _loaded = {};
+function invalidate(...sections) { sections.forEach(s => delete _loaded[s]); }
 
 const API = "";
 
@@ -2959,17 +2962,48 @@ function navTo(pantalla) {
   openGroupFor(pantalla);
 
   closeSidebar();
-  if ((pantalla === "dashboard" || pantalla === "inventario") && token) cargarProductos();
-  if (pantalla === "dashboard" && token) cargarCajaHoy();
-  if (pantalla === "inventario" && token) cargarInsumos();
-  if (pantalla === "ventas" && token) cargarVentas();
-  if (pantalla === "clientes" && token) { cargarFiados(); cargarClientes(); cargarProductos(); }
-  if (pantalla === "reportes" && token) cargarReportes();
-  if (pantalla === "gastos" && token) cargarGastos();
-  if (pantalla === "insumos" && token) { cargarInsumos(); cargarCompras(); cargarConsumo(); }
-  if (pantalla === "produccion" && token) { cargarInsumos(); cargarProductos(); cargarProduccion(); cargarSugerencias(); }
-  if (pantalla === "ia" && token) cargarHistorialChat();
-  if (pantalla === "sucursales" && token) cargarSucursales();
+  if (!token) return;
+  switch (pantalla) {
+    case "dashboard":
+      if (_loaded.productos) renderInventario(); else cargarProductos();
+      cargarCajaHoy(); // always refresh — shows today's live data
+      break;
+    case "inventario":
+      if (_loaded.productos) renderInventario(); else cargarProductos();
+      if (_loaded.insumos)   renderInsumos();   else cargarInsumos();
+      break;
+    case "ventas":
+      if (_loaded.ventas) renderVentas(); else cargarVentas();
+      break;
+    case "gastos":
+      if (_loaded.gastos) renderGastos(); else cargarGastos();
+      break;
+    case "clientes":
+      if (_loaded.clientes) renderClientes();
+      else { cargarFiados(); cargarClientes(); }
+      if (!_loaded.productos) cargarProductos();
+      break;
+    case "reportes":
+      if (_loaded.reportes) renderReportes(); else cargarReportes();
+      break;
+    case "insumos":
+      if (_loaded.insumos) renderInsumos(); else cargarInsumos();
+      if (_loaded.compras) { renderPendientes(compras.filter(c=>c.estado==="pendiente")); renderCompras(compras.filter(c=>c.estado==="llegado")); }
+      else cargarCompras();
+      cargarConsumo(); // lightweight, always refresh
+      break;
+    case "produccion":
+      if (!_loaded.productos) cargarProductos();
+      if (!_loaded.insumos)   cargarInsumos();
+      cargarProduccion(); cargarSugerencias();
+      break;
+    case "ia":
+      cargarHistorialChat(); // chatLoaded guard is inside
+      break;
+    case "sucursales":
+      if (_loaded.sucursales) renderSucursales(); else cargarSucursales();
+      break;
+  }
 }
 
 function setFechaHoy() {
@@ -3069,7 +3103,8 @@ function logout() {
   document.body.classList.remove("app-active");
   token = null; userRole = "admin"; sucursalId = null; sucursalNombreUser = "";
   productos = []; chatHistory = []; chatLoaded = false; sucursales = [];
-  clientes = []; pedidosTodos = []; gastos = []; fiadoTodos = [];
+  clientes = []; pedidosTodos = []; gastos = []; fiadoTodos = []; compras = [];
+  for (const k in _loaded) delete _loaded[k];
   if (reporteChart) { reporteChart.destroy(); reporteChart = null; }
   if (dashChart) { dashChart.destroy(); dashChart = null; }
   document.getElementById("topbar").classList.remove("visible");
@@ -3411,6 +3446,7 @@ async function agregarProducto() {
       ["producto","stock","costoLote","venta"].forEach(id => document.getElementById(id).value = "");
       document.getElementById("productoUnidad").value = "u";
       document.getElementById("costoUnitDisplay").textContent = "";
+      invalidate("reportes", "ventas");
       await cargarProductos();
     } else {
       mostrarAlerta("respuestaNegocio", json.msg, "error");
@@ -3424,6 +3460,7 @@ async function cargarProductos() {
     const res = await fetch(`${API}/api/productos`, { headers: authHeaders() });
     if (res.status === 401) { handleUnauthorized(); return; }
     productos = await res.json();
+    _loaded.productos = true;
     actualizarDashboard();
   } catch { /* mantiene datos anteriores */ }
 }
@@ -3567,7 +3604,7 @@ async function guardarEdicion() {
   try {
     const res = await fetch(`${API}/api/productos/${editandoId}`, { method:"PUT", headers:authHeaders(), body:JSON.stringify({producto:nombre,stock,costo,venta,unidad}) });
     if (res.status===401) { handleUnauthorized(); return; }
-    if (res.ok) { cerrarModal(); await cargarProductos(); }
+    if (res.ok) { cerrarModal(); invalidate("reportes", "ventas"); await cargarProductos(); }
     else { const j = await res.json(); mostrarAlerta("respuestaModal",j.msg,"error"); }
   } catch { mostrarAlerta("respuestaModal","Error de conexión.","error"); }
 }
@@ -3576,7 +3613,7 @@ async function eliminarProducto(id) {
   try {
     const res = await fetch(`${API}/api/productos/${id}`, { method:"DELETE", headers:authHeaders() });
     if (res.status===401) { handleUnauthorized(); return; }
-    if (res.ok) await cargarProductos();
+    if (res.ok) { invalidate("reportes", "ventas"); await cargarProductos(); }
   } catch { /* silencioso */ }
 }
 document.getElementById("modalEditar").addEventListener("click", function(e) {
@@ -3591,6 +3628,7 @@ async function cargarInsumos() {
     const res = await fetch(`${API}/api/insumos`, { headers: authHeaders() });
     if (res.status === 401) { handleUnauthorized(); return; }
     insumos = await res.json();
+    _loaded.insumos = true;
     renderInsumos();
     poblarSelectCompras();
   } catch { /* silencioso */ }
@@ -3678,6 +3716,7 @@ async function agregarInsumo() {
       mostrarAlerta("respuestaInsumo","✓ " + json.msg,"success");
       ["insNombre","insStock","insCompra"].forEach(id => document.getElementById(id).value="");
       document.getElementById("insCostoDisplay").textContent = "";
+      invalidate("produccion");
       await cargarInsumos();
     } else { mostrarAlerta("respuestaInsumo",json.msg,"error"); }
   } catch { mostrarAlerta("respuestaInsumo","Error de conexión.","error"); }
@@ -3726,7 +3765,7 @@ async function guardarEdicionInsumo() {
   try {
     const res = await fetch(`${API}/api/insumos/${editandoInsumoId}`, { method:"PUT", headers:authHeaders(), body:JSON.stringify(body) });
     if (res.status===401) { handleUnauthorized(); return; }
-    if (res.ok) { cerrarModalInsumo(); await cargarInsumos(); }
+    if (res.ok) { cerrarModalInsumo(); invalidate("produccion"); await cargarInsumos(); }
     else { const j=await res.json(); mostrarAlerta("respuestaModalInsumo",j.msg,"error"); }
   } catch { mostrarAlerta("respuestaModalInsumo","Error de conexión.","error"); }
 }
@@ -3736,7 +3775,7 @@ async function eliminarInsumo(id) {
   try {
     const res = await fetch(`${API}/api/insumos/${id}`, { method:"DELETE", headers:authHeaders() });
     if (res.status===401) { handleUnauthorized(); return; }
-    if (res.ok) await cargarInsumos();
+    if (res.ok) { invalidate("produccion"); await cargarInsumos(); }
   } catch { /* silencioso */ }
 }
 
@@ -3777,6 +3816,8 @@ async function cargarCompras() {
     const res = await fetch(`${API}/api/compras`, { headers: authHeaders() });
     if (res.status === 401) { handleUnauthorized(); return; }
     const data = await res.json();
+    compras = data;
+    _loaded.compras = true;
     renderPendientes(data.filter(c => c.estado === "pendiente"));
     renderCompras(data.filter(c => c.estado === "llegado"));
   } catch { /* silencioso */ }
@@ -4084,6 +4125,7 @@ async function registrarProduccion() {
       produccionReceta = [];
       document.getElementById("prodRequirements").style.display = "none";
       document.getElementById("prodProducto").value = "";
+      invalidate("reportes");
       await Promise.all([cargarProduccion(), cargarInsumos(), cargarProductos()]);
     } else { mostrarAlerta("respuestaProduccion",json.msg,"error"); }
   } catch { mostrarAlerta("respuestaProduccion","Error de conexión.","error"); }
@@ -4096,6 +4138,7 @@ async function cargarProduccion() {
     const res = await fetch(`${API}/api/produccion`, { headers: authHeaders() });
     if (res.status===401) { handleUnauthorized(); return; }
     produccionHistory = await res.json();
+    _loaded.produccion = true;
     renderProduccion();
   } catch { /* silencioso */ }
 }
@@ -4148,6 +4191,7 @@ async function cargarVentas() {
     const res = await fetch(`${API}/api/ventas`, { headers: authHeaders() });
     if (res.status === 401) { handleUnauthorized(); return; }
     ventas = await res.json();
+    _loaded.ventas = true;
     renderVentas();
   } catch { /* mantiene datos anteriores */ }
 }
@@ -4169,6 +4213,7 @@ async function registrarVenta() {
       const unidad = lbl ? lbl.textContent : "u";
       mostrarAlerta("respuestaVenta", `✓ ${json.msg}. Stock restante: ${formatNum(json.stock_restante)} ${unidad}`, "success");
       document.getElementById("ventaCantidad").value = 1;
+      invalidate("reportes");
       await Promise.all([cargarVentas(), cargarProductos()]);
     } else {
       mostrarAlerta("respuestaVenta", json.msg, "error");
@@ -4379,6 +4424,7 @@ async function cargarClientes() {
     const res = await fetch(`${API}/api/clientes`, { headers: authHeaders() });
     if (res.status === 401) { handleUnauthorized(); return; }
     clientes = await res.json();
+    _loaded.clientes = true;
     renderClientes();
   } catch { /* silencioso */ }
 }
@@ -4548,6 +4594,7 @@ async function cargarGastos() {
     const res = await fetch(`${API}/api/gastos`, { headers: authHeaders() });
     if (res.status===401) { handleUnauthorized(); return; }
     gastos = await res.json();
+    _loaded.gastos = true;
     renderGastos();
   } catch { /* silencioso */ }
 }
@@ -4611,6 +4658,7 @@ async function agregarGasto() {
       mostrarAlerta("respuestaGasto","✓ " + json.msg,"success");
       document.getElementById("gasConcepto").value = "";
       document.getElementById("gasMonto").value    = "";
+      invalidate("reportes");
       await cargarGastos();
     } else { mostrarAlerta("respuestaGasto",json.msg,"error"); }
   } catch { mostrarAlerta("respuestaGasto","Error de conexión.","error"); }
@@ -4622,7 +4670,7 @@ async function eliminarGasto(id) {
   try {
     const res = await fetch(`${API}/api/gastos/${id}`, { method:"DELETE", headers:authHeaders() });
     if (res.status===401) { handleUnauthorized(); return; }
-    if (res.ok) await cargarGastos();
+    if (res.ok) { invalidate("reportes"); await cargarGastos(); }
   } catch { /* silencioso */ }
 }
 
@@ -4650,6 +4698,7 @@ async function cargarReportes() {
       ...vData.map(v => ({ ...v, tipo: "venta",  nombre: v.nombre })),
       ...pData.map(p => ({ ...p, tipo: "pedido", nombre: p.product_nombre }))
     ];
+    _loaded.reportes = true;
     renderReportes();
   } catch { /* silencioso */ }
 }
@@ -4774,6 +4823,7 @@ async function cargarFiados() {
     const res = await fetch(`${API}/api/fiado`, { headers: authHeaders() });
     if (res.status === 401) { handleUnauthorized(); return; }
     fiadoTodos = res.ok ? await res.json() : [];
+    _loaded.fiados = true;
   } catch { fiadoTodos = []; }
 }
 
@@ -5156,6 +5206,7 @@ async function cargarSucursales() {
     const res = await fetch(`${API}/api/sucursales`, { headers: authHeaders() });
     if (!res.ok) return;
     sucursales = await res.json();
+    _loaded.sucursales = true;
     renderSucursales();
   } catch { /* silencioso */ }
 }
