@@ -1340,6 +1340,11 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
   cursor: pointer; font-family: inherit; transition: background 0.18s;
 }
 .calc-cerrar-dia:hover { background: rgba(245,158,11,0.2); }
+.venta-tabs { display:flex; gap:8px; margin-bottom:16px; }
+.venta-tab { flex:1; padding:10px; border-radius:10px; border:1.5px solid rgba(245,158,11,0.2); background:transparent; color:rgba(254,243,199,0.5); font-size:14px; font-weight:600; cursor:pointer; transition:all 0.15s; font-family:inherit; }
+.venta-tab.active { background:rgba(245,158,11,0.15); border-color:rgba(245,158,11,0.5); color:#fbbf24; }
+.btn-cierre-hdr { padding:8px 14px; border-radius:10px; border:1.5px solid rgba(245,158,11,0.35); background:transparent; color:#fbbf24; font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap; transition:background 0.15s; font-family:inherit; }
+.btn-cierre-hdr:hover { background:rgba(245,158,11,0.15); }
 .cierre-overlay {
   position: fixed; inset: 0; z-index: 900;
   background: rgba(0,0,0,0.75); backdrop-filter: blur(4px);
@@ -2095,65 +2100,113 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
 <!-- ═══════════════ VENTAS ═══════════════ -->
 <div id="ventas" class="screen">
   <div class="app-screen" style="max-width:900px;">
-    <h2>Registro de Ventas</h2>
-
-    <!-- Formulario -->
-    <div class="card">
-      <h3>Registrar Venta</h3>
-      <div class="venta-form">
-        <select id="ventaProducto" onchange="onVentaProductoChange()">
-          <option value="">Seleccioná un producto...</option>
-        </select>
-        <input class="venta-qty" id="ventaCantidad" type="number" min="0.001" step="0.001" placeholder="Cant." value="1">
-        <span id="ventaUnidadLabel" style="font-size:13px;color:#86efac;min-width:28px;text-align:center;">u</span>
-        <button class="btn-vender" id="btnVender" onclick="registrarVenta()">Registrar</button>
-      </div>
-      <div id="respuestaVenta"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <h2 style="margin:0;">Ventas</h2>
+      <button class="btn-cierre-hdr" onclick="abrirCierreDia()">☀ Cerrar día</button>
     </div>
 
-    <!-- Métricas -->
-    <div class="ventas-metrics" id="ventasMetrics" style="display:none;">
-      <div class="metric">
-        <div class="metric-label">Ventas Totales</div>
-        <div class="metric-value" id="vTotalVentas">0</div>
+    <!-- Tabs -->
+    <div class="venta-tabs">
+      <button class="venta-tab active" id="tabPorProducto" onclick="switchVentaTab('producto')">Por producto</button>
+      <button class="venta-tab" id="tabCobro" onclick="switchVentaTab('cobro')">Cobro rápido</button>
+    </div>
+
+    <!-- ── Tab: Por producto ── -->
+    <div id="ventaTabProducto">
+      <div class="card">
+        <h3>Registrar Venta</h3>
+        <div class="venta-form">
+          <select id="ventaProducto" onchange="onVentaProductoChange()">
+            <option value="">Seleccioná un producto...</option>
+          </select>
+          <input class="venta-qty" id="ventaCantidad" type="number" min="0.001" step="0.001" placeholder="Cant." value="1">
+          <span id="ventaUnidadLabel" style="font-size:13px;color:#86efac;min-width:28px;text-align:center;">u</span>
+          <button class="btn-vender" id="btnVender" onclick="registrarVenta()">Registrar</button>
+        </div>
+        <div id="respuestaVenta"></div>
       </div>
-      <div class="metric">
-        <div class="metric-label">Ingresos</div>
-        <div class="metric-value green" id="vIngresos">$0</div>
+
+      <div class="ventas-metrics" id="ventasMetrics" style="display:none;">
+        <div class="metric">
+          <div class="metric-label">Ventas Totales</div>
+          <div class="metric-value" id="vTotalVentas">0</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Ingresos</div>
+          <div class="metric-value green" id="vIngresos">$0</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Ganancia Real</div>
+          <div class="metric-value green" id="vGanancia">$0</div>
+        </div>
       </div>
-      <div class="metric">
-        <div class="metric-label">Ganancia Real</div>
-        <div class="metric-value green" id="vGanancia">$0</div>
+
+      <div class="card" id="ventasEmpty">
+        <div class="empty-state">
+          <div class="empty-icon">💰</div>
+          <h3>Sin ventas registradas</h3>
+          <p>Registrá tu primera venta para ver el historial aquí.</p>
+        </div>
+      </div>
+
+      <div class="card" id="ventasCard" style="display:none; padding:0; overflow:hidden;">
+        <div class="inv-wrap">
+          <table class="inv-table">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Producto</th>
+                <th>Cant.</th>
+                <th>Precio</th>
+                <th>Costo unit.</th>
+                <th>Ganancia</th>
+              </tr>
+            </thead>
+            <tbody id="ventasBody"></tbody>
+            <tfoot id="ventasFoot"></tfoot>
+          </table>
+        </div>
       </div>
     </div>
 
-    <!-- Historial -->
-    <div class="card" id="ventasEmpty">
-      <div class="empty-state">
-        <div class="empty-icon">💰</div>
-        <h3>Sin ventas registradas</h3>
-        <p>Registrá tu primera venta para ver el historial aquí.</p>
+    <!-- ── Tab: Cobro rápido ── -->
+    <div id="ventaTabCobro" style="display:none;">
+      <div id="vCalcAlerta"></div>
+      <div class="calc-display">
+        <div class="calc-chips" id="vCalcChips"></div>
+        <div class="calc-input-row" id="vCalcInputRow">$0</div>
+        <div class="calc-total-row" id="vCalcTotalRow">Total: $0</div>
       </div>
+      <div class="calc-keypad">
+        <button class="calc-key" onclick="vCalcNum('7')">7</button>
+        <button class="calc-key" onclick="vCalcNum('8')">8</button>
+        <button class="calc-key" onclick="vCalcNum('9')">9</button>
+        <button class="calc-key calc-key-del" onclick="vCalcDel()">⌫</button>
+        <button class="calc-key" onclick="vCalcNum('4')">4</button>
+        <button class="calc-key" onclick="vCalcNum('5')">5</button>
+        <button class="calc-key" onclick="vCalcNum('6')">6</button>
+        <button class="calc-key calc-key-add" onclick="vCalcAdd()">+</button>
+        <button class="calc-key" onclick="vCalcNum('1')">1</button>
+        <button class="calc-key" onclick="vCalcNum('2')">2</button>
+        <button class="calc-key" onclick="vCalcNum('3')">3</button>
+        <button class="calc-key calc-key-zero" onclick="vCalcNum('0')">0</button>
+        <button class="calc-key" onclick="vCalcNum('.')">.</button>
+      </div>
+      <div class="calc-close-btns">
+        <button class="calc-close-btn calc-btn-efectivo" id="vCalcBtnEfectivo" onclick="vCerrarVenta('efectivo')">
+          <span class="cb-icon">💵</span><span class="cb-label">Efectivo</span>
+        </button>
+        <button class="calc-close-btn calc-btn-transferencia" id="vCalcBtnTransferencia" onclick="vCerrarVenta('transferencia')">
+          <span class="cb-icon">📱</span><span class="cb-label">Transferencia</span>
+        </button>
+        <button class="calc-close-btn calc-btn-tarjeta" id="vCalcBtnTarjeta" onclick="vCerrarVenta('tarjeta')">
+          <span class="cb-icon">💳</span><span class="cb-label">Tarjeta</span>
+        </button>
+      </div>
+      <button class="calc-anular" onclick="vAnularUltima()">✕ Anular última venta</button>
+      <div id="vCalcHistorial"></div>
     </div>
 
-    <div class="card" id="ventasCard" style="display:none; padding:0; overflow:hidden;">
-      <div class="inv-wrap">
-        <table class="inv-table">
-          <thead>
-            <tr>
-              <th>Fecha</th>
-              <th>Producto</th>
-              <th>Cant.</th>
-              <th>Precio</th>
-              <th>Costo unit.</th>
-              <th>Ganancia</th>
-            </tr>
-          </thead>
-          <tbody id="ventasBody"></tbody>
-          <tfoot id="ventasFoot"></tfoot>
-        </table>
-      </div>
-    </div>
   </div>
 </div>
 
@@ -5132,6 +5185,119 @@ async function cargarHistorialCaja() {
 async function cargarCaja() {
   calcClear();
   cargarHistorialCaja();
+}
+
+// ─── VENTAS: COBRO RÁPIDO ─────────────────────────────────────────────────────
+let vCalcBuffer = "", vCalcItems = [], vCalcTotal = 0;
+
+function switchVentaTab(tab) {
+  const esProd = tab === "producto";
+  document.getElementById("ventaTabProducto").style.display = esProd ? "" : "none";
+  document.getElementById("ventaTabCobro").style.display = esProd ? "none" : "";
+  document.getElementById("tabPorProducto").classList.toggle("active", esProd);
+  document.getElementById("tabCobro").classList.toggle("active", !esProd);
+  if (!esProd) vCargarHistorial();
+}
+
+function vRenderCalcDisplay() {
+  const fmt = n => "$" + n.toLocaleString("es-AR", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  document.getElementById("vCalcChips").innerHTML = vCalcItems.map(v => `<span class="calc-chip">${fmt(v)}</span>`).join("");
+  document.getElementById("vCalcInputRow").textContent = vCalcBuffer ? "$" + vCalcBuffer : (vCalcTotal > 0 ? "" : "$0");
+  document.getElementById("vCalcTotalRow").textContent = `Total: ${fmt(vCalcTotal)}`;
+  const disabled = vCalcTotal <= 0 && !vCalcBuffer;
+  ["vCalcBtnEfectivo","vCalcBtnTransferencia","vCalcBtnTarjeta"].forEach(id => {
+    document.getElementById(id).disabled = disabled;
+  });
+}
+
+function vCalcNum(n) {
+  if (n === "." && vCalcBuffer.includes(".")) return;
+  if (vCalcBuffer === "0" && n !== ".") { vCalcBuffer = n; }
+  else { if (vCalcBuffer.length >= 9) return; vCalcBuffer += n; }
+  vRenderCalcDisplay();
+}
+
+function vCalcDel() {
+  vCalcBuffer = vCalcBuffer.slice(0, -1);
+  vRenderCalcDisplay();
+}
+
+function vCalcAdd() {
+  const val = parseFloat(vCalcBuffer);
+  if (!vCalcBuffer || isNaN(val) || val <= 0) return;
+  vCalcItems.push(val);
+  vCalcTotal = parseFloat(vCalcItems.reduce((s, v) => s + v, 0).toFixed(2));
+  vCalcBuffer = "";
+  vRenderCalcDisplay();
+}
+
+function vCalcClear() {
+  vCalcBuffer = ""; vCalcItems = []; vCalcTotal = 0;
+  vRenderCalcDisplay();
+}
+
+async function vCerrarVenta(metodo) {
+  if (vCalcBuffer) {
+    const val = parseFloat(vCalcBuffer);
+    if (!isNaN(val) && val > 0) {
+      vCalcItems.push(val);
+      vCalcTotal = parseFloat(vCalcItems.reduce((s,v)=>s+v,0).toFixed(2));
+      vCalcBuffer = "";
+    }
+  }
+  if (vCalcTotal <= 0) { mostrarAlerta("vCalcAlerta","Ingresá un monto primero.","error"); return; }
+  const monto = vCalcTotal;
+  try {
+    const res = await fetch(`${API}/api/caja`, {
+      method: "POST", headers: authHeaders(),
+      body: JSON.stringify({ monto, metodo_pago: metodo })
+    });
+    const json = await res.json();
+    if (res.ok) {
+      const fmt = n => "$" + n.toLocaleString("es-AR");
+      const etiqueta = { efectivo:"Efectivo", transferencia:"Transferencia", tarjeta:"Tarjeta" }[metodo];
+      vCalcClear();
+      mostrarAlerta("vCalcAlerta", `✔ ${fmt(monto)} — ${etiqueta}`, "success");
+      setTimeout(() => limpiarAlerta("vCalcAlerta"), 3000);
+      vCargarHistorial();
+    } else { mostrarAlerta("vCalcAlerta", json.msg, "error"); }
+  } catch { mostrarAlerta("vCalcAlerta","Error de conexión.","error"); }
+}
+
+async function vAnularUltima() {
+  if (!confirm("¿Anular la última venta de caja?")) return;
+  try {
+    const res = await fetch(`${API}/api/caja/ultima`, { method: "DELETE", headers: authHeaders() });
+    const json = await res.json();
+    mostrarAlerta("vCalcAlerta", res.ok ? "✔ Venta anulada" : json.msg, res.ok ? "success" : "error");
+    if (res.ok) { setTimeout(() => limpiarAlerta("vCalcAlerta"), 3000); vCargarHistorial(); }
+  } catch { mostrarAlerta("vCalcAlerta","Error de conexión.","error"); }
+}
+
+async function vCargarHistorial() {
+  try {
+    const res = await fetch(`${API}/api/caja/hoy`, { headers: authHeaders() });
+    if (!res.ok) return;
+    const data = await res.json();
+    const el = document.getElementById("vCalcHistorial");
+    if (!data.length) { el.innerHTML = `<div class="calc-hist-title">Sin ventas hoy</div>`; return; }
+    const icon = { efectivo:"💵", transferencia:"📱", tarjeta:"💳" };
+    const fmt  = n => "$" + n.toLocaleString("es-AR");
+    const total = data.reduce((s,v) => s + v.monto, 0);
+    el.innerHTML = `
+      <div class="calc-hist-title">Ventas de hoy</div>
+      ${data.slice(0,10).map(v=>`
+        <div class="calc-hist-row">
+          <div>
+            <span>${icon[v.metodo]||"💵"} ${escHtml(v.label)}</span>
+            <div class="calc-hist-meta">${v.hora}</div>
+          </div>
+          <div class="calc-hist-monto">${fmt(v.monto)}</div>
+        </div>`).join("")}
+      <div style="margin-top:10px;font-weight:700;color:#f59e0b;font-size:15px;text-align:right;">
+        Total hoy: ${fmt(total)}
+      </div>`;
+  } catch { /* silencioso */ }
 }
 
 async function abrirCierreDia() {
