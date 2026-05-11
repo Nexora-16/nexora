@@ -5300,6 +5300,21 @@ async function vCargarHistorial() {
   } catch { /* silencioso */ }
 }
 
+document.addEventListener("keydown", function(e) {
+  if (["INPUT","TEXTAREA","SELECT"].includes(document.activeElement.tagName)) return;
+  const cajaActiva  = document.getElementById("caja")?.classList.contains("active");
+  const cobroActivo = document.getElementById("ventaTabCobro")?.style.display !== "none"
+                   && document.getElementById("ventas")?.classList.contains("active");
+  if (!cajaActiva && !cobroActivo) return;
+  const num = cajaActiva ? calcNum : vCalcNum;
+  const del = cajaActiva ? calcDel : vCalcDel;
+  const add = cajaActiva ? calcAdd : vCalcAdd;
+  if (e.key >= "0" && e.key <= "9")           { e.preventDefault(); num(e.key); }
+  else if (e.key === "." || e.key === ",")     { e.preventDefault(); num("."); }
+  else if (e.key === "Backspace")              { e.preventDefault(); del(); }
+  else if (e.key === "Enter" || e.key === "+") { e.preventDefault(); add(); }
+});
+
 async function abrirCierreDia() {
   const overlay = document.getElementById("cierreOverlay");
   overlay.classList.add("open");
