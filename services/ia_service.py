@@ -67,7 +67,7 @@ Resumen del día:"""
                 "max_tokens": 180,
                 "temperature": 0.75,
             },
-            timeout=20,
+            timeout=35,
         )
         res.raise_for_status()
         return res.json()["choices"][0]["message"]["content"].strip()

@@ -1345,6 +1345,7 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
 .venta-tab.active { background:rgba(245,158,11,0.15); border-color:rgba(245,158,11,0.5); color:#fbbf24; }
 .btn-cierre-hdr { padding:8px 14px; border-radius:10px; border:1.5px solid rgba(245,158,11,0.35); background:transparent; color:#fbbf24; font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap; transition:background 0.15s; font-family:inherit; }
 .btn-cierre-hdr:hover { background:rgba(245,158,11,0.15); }
+.dash-loading { text-align:center; padding:18px; color:rgba(254,243,199,0.4); font-size:13px; letter-spacing:0.5px; }
 .cierre-overlay {
   position: fixed; inset: 0; z-index: 900;
   background: rgba(0,0,0,0.75); backdrop-filter: blur(4px);
@@ -1993,7 +1994,11 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
 <!-- ═══════════════ DASHBOARD ═══════════════ -->
 <div id="dashboard" class="screen">
   <div class="app-screen">
-    <h2>Dashboard</h2>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <h2 style="margin:0;">Dashboard</h2>
+      <button class="btn-cierre-hdr" onclick="abrirCierreDia()">☀ Cerrar día</button>
+    </div>
+    <div id="dashLoading" class="dash-loading" style="display:none;">Cargando datos…</div>
 
     <!-- Caja del día -->
     <div class="caja-card" id="cajaCard" style="display:none;">
@@ -2141,6 +2146,12 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
         </div>
       </div>
 
+      <div class="periodo-tabs" id="ventasFiltroBar" style="display:none;">
+        <button class="periodo-tab active" onclick="setVentaFiltro('todo',this)">Todo</button>
+        <button class="periodo-tab" onclick="setVentaFiltro('semana',this)">7 días</button>
+        <button class="periodo-tab" onclick="setVentaFiltro('hoy',this)">Hoy</button>
+      </div>
+
       <div class="card" id="ventasEmpty">
         <div class="empty-state">
           <div class="empty-icon">💰</div>
@@ -2254,10 +2265,13 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
     <h2>Reportes</h2>
 
     <div class="card">
-      <div class="periodo-tabs">
-        <button class="periodo-tab active" onclick="setPeriodo(7,this)">7 días</button>
-        <button class="periodo-tab"        onclick="setPeriodo(30,this)">30 días</button>
-        <button class="periodo-tab"        onclick="setPeriodo(90,this)">3 meses</button>
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+        <div class="periodo-tabs" style="margin-bottom:0;">
+          <button class="periodo-tab active" onclick="setPeriodo(7,this)">7 días</button>
+          <button class="periodo-tab"        onclick="setPeriodo(30,this)">30 días</button>
+          <button class="periodo-tab"        onclick="setPeriodo(90,this)">3 meses</button>
+        </div>
+        <button class="btn-cierre-hdr" onclick="exportarCSV()">↓ Exportar CSV</button>
       </div>
 
       <div class="reporte-metrics">
@@ -2867,6 +2881,9 @@ let reportePeriodo     = 7;
 let fiadoTodos         = [];
 let fiadoClienteActual = null;
 let compras            = [];
+let ventasFiltro       = 'todo';
+let ventasPagina       = 1;
+const VENTAS_PAGE      = 40;
 const _loaded = {};
 function invalidate(...sections) { sections.forEach(s => delete _loaded[s]); }
 
@@ -3026,6 +3043,7 @@ function navTo(pantalla) {
       if (_loaded.insumos)   renderInsumos();   else cargarInsumos();
       break;
     case "ventas":
+      vCalcClear(); ventasPagina = 1;
       if (_loaded.ventas) renderVentas(); else cargarVentas();
       break;
     case "gastos":
@@ -3509,13 +3527,15 @@ async function agregarProducto() {
 }
 
 async function cargarProductos() {
+  const loadEl = document.getElementById("dashLoading");
+  if (loadEl && document.getElementById("dashboard")?.classList.contains("active")) loadEl.style.display = "block";
   try {
     const res = await fetch(`${API}/api/productos`, { headers: authHeaders() });
     if (res.status === 401) { handleUnauthorized(); return; }
     productos = await res.json();
     _loaded.productos = true;
     actualizarDashboard();
-  } catch { /* mantiene datos anteriores */ }
+  } catch { if (loadEl) loadEl.style.display = "none"; /* mantiene datos anteriores */ }
 }
 
 const STOCK_BAJO_UMBRAL = 5;
@@ -3535,6 +3555,8 @@ function actualizarAlertas() {
 }
 
 function actualizarDashboard() {
+  const loadEl = document.getElementById("dashLoading");
+  if (loadEl) loadEl.style.display = "none";
   actualizarAlertas();
   const hayProductos = productos.length > 0;
   document.getElementById("dashEmpty").style.display = hayProductos ? "none"  : "block";
@@ -3769,6 +3791,7 @@ async function agregarInsumo() {
       mostrarAlerta("respuestaInsumo","✓ " + json.msg,"success");
       ["insNombre","insStock","insCompra"].forEach(id => document.getElementById(id).value="");
       document.getElementById("insCostoDisplay").textContent = "";
+      document.getElementById("insUnidad").selectedIndex = 0;
       invalidate("produccion");
       await cargarInsumos();
     } else { mostrarAlerta("respuestaInsumo",json.msg,"error"); }
@@ -4275,31 +4298,59 @@ async function registrarVenta() {
   finally  { setLoading("btnVender", false); }
 }
 
+function setVentaFiltro(filtro, btn) {
+  ventasFiltro = filtro;
+  btn.closest(".periodo-tabs").querySelectorAll(".periodo-tab").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  ventasPagina = 1;
+  renderVentas();
+}
+
 function renderVentas() {
   poblarSelectProductos();
-  const empty   = document.getElementById("ventasEmpty");
-  const card    = document.getElementById("ventasCard");
-  const metrics = document.getElementById("ventasMetrics");
-  const body    = document.getElementById("ventasBody");
-  const foot    = document.getElementById("ventasFoot");
+  const empty      = document.getElementById("ventasEmpty");
+  const card       = document.getElementById("ventasCard");
+  const metrics    = document.getElementById("ventasMetrics");
+  const body       = document.getElementById("ventasBody");
+  const foot       = document.getElementById("ventasFoot");
+  const filtroBar  = document.getElementById("ventasFiltroBar");
 
   if (ventas.length === 0) {
     empty.style.display   = "block";
     card.style.display    = "none";
     metrics.style.display = "none";
+    if (filtroBar) filtroBar.style.display = "none";
     return;
   }
+
+  // Filtrar por período
+  const ahora = new Date();
+  const filtered = ventas.filter(v => {
+    if (ventasFiltro === 'todo') return true;
+    const d = parseDate(v.created_at);
+    if (ventasFiltro === 'hoy') {
+      const hoy = new Date(); hoy.setHours(0,0,0,0); return d >= hoy;
+    }
+    if (ventasFiltro === 'semana') {
+      const sem = new Date(ahora); sem.setDate(ahora.getDate()-7); return d >= sem;
+    }
+    return true;
+  });
 
   empty.style.display   = "none";
   card.style.display    = "block";
   metrics.style.display = "grid";
+  if (filtroBar) filtroBar.style.display = "flex";
 
+  // Totales sobre el set filtrado completo
   let totalQty = 0, totalIngresos = 0, totalGanancia = 0;
+  filtered.forEach(v => { totalQty += v.cantidad; totalIngresos += v.precio * v.cantidad; totalGanancia += v.ganancia; });
 
-  body.innerHTML = ventas.map(v => {
-    totalQty      += v.cantidad;
-    totalIngresos += v.precio * v.cantidad;
-    totalGanancia += v.ganancia;
+  // Paginación
+  const pageData = filtered.slice(0, ventasPagina * VENTAS_PAGE);
+  const hayMas   = pageData.length < filtered.length;
+
+  body.innerHTML = pageData.map(v => {
     const gCls = v.ganancia >= 0 ? "td-green" : "td-red";
     return `<tr>
       <td style="color:#fcd34d;opacity:0.7;font-size:12px;">${v.created_at}</td>
@@ -4312,15 +4363,21 @@ function renderVentas() {
   }).join("");
 
   const gCls = totalGanancia >= 0 ? "td-green" : "td-red";
-  foot.innerHTML = `<tr class="inv-summary">
-    <td colspan="2" class="sum-label">Totales</td>
-    <td class="td-num">${formatNum(totalQty)}</td>
-    <td class="td-num">$${totalIngresos.toLocaleString("es-AR", {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
-    <td></td>
-    <td class="td-num ${gCls}">$${totalGanancia.toLocaleString("es-AR", {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
-  </tr>`;
+  foot.innerHTML = `
+    ${hayMas ? `<tr><td colspan="6" style="text-align:center;padding:10px 0;">
+      <button class="periodo-tab" style="width:auto;padding:7px 20px;" onclick="ventasPagina++;renderVentas()">
+        Ver más (${filtered.length - pageData.length} más)
+      </button>
+    </td></tr>` : ""}
+    <tr class="inv-summary">
+      <td colspan="2" class="sum-label">Totales (${filtered.length})</td>
+      <td class="td-num">${formatNum(totalQty)}</td>
+      <td class="td-num">$${totalIngresos.toLocaleString("es-AR", {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+      <td></td>
+      <td class="td-num ${gCls}">$${totalGanancia.toLocaleString("es-AR", {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+    </tr>`;
 
-  document.getElementById("vTotalVentas").textContent = ventas.length;
+  document.getElementById("vTotalVentas").textContent = filtered.length;
   document.getElementById("vIngresos").textContent    = "$" + totalIngresos.toLocaleString("es-AR", {minimumFractionDigits:2, maximumFractionDigits:2});
   document.getElementById("vGanancia").textContent    = "$" + totalGanancia.toLocaleString("es-AR", {minimumFractionDigits:2, maximumFractionDigits:2});
   document.getElementById("vGanancia").className      = "metric-value " + (totalGanancia >= 0 ? "green" : "red");
@@ -4732,7 +4789,7 @@ async function eliminarGasto(id) {
 
 function setPeriodo(dias, btn) {
   reportePeriodo = dias;
-  document.querySelectorAll(".periodo-tab").forEach(b => b.classList.remove("active"));
+  btn.closest(".periodo-tabs").querySelectorAll(".periodo-tab").forEach(b => b.classList.remove("active"));
   btn.classList.add("active");
   renderReportes();
 }
@@ -5129,6 +5186,8 @@ async function cerrarVenta(metodo) {
   }
   if (calcTotal <= 0) { mostrarAlerta("cajaAlerta","Ingresá un monto primero.","error"); return; }
   const monto = calcTotal;
+  const btns = ["calcBtnEfectivo","calcBtnTransferencia","calcBtnTarjeta"];
+  btns.forEach(id => document.getElementById(id).disabled = true);
   try {
     const res = await fetch(`${API}/api/caja`, {
       method: "POST", headers: authHeaders(),
@@ -5144,6 +5203,7 @@ async function cerrarVenta(metodo) {
       cargarHistorialCaja();
     } else { mostrarAlerta("cajaAlerta", json.msg, "error"); }
   } catch { mostrarAlerta("cajaAlerta","Error de conexión.","error"); }
+  finally  { renderCalcDisplay(); }
 }
 
 async function anularUltimaVenta() {
@@ -5247,6 +5307,8 @@ async function vCerrarVenta(metodo) {
   }
   if (vCalcTotal <= 0) { mostrarAlerta("vCalcAlerta","Ingresá un monto primero.","error"); return; }
   const monto = vCalcTotal;
+  const btns = ["vCalcBtnEfectivo","vCalcBtnTransferencia","vCalcBtnTarjeta"];
+  btns.forEach(id => document.getElementById(id).disabled = true);
   try {
     const res = await fetch(`${API}/api/caja`, {
       method: "POST", headers: authHeaders(),
@@ -5262,6 +5324,7 @@ async function vCerrarVenta(metodo) {
       vCargarHistorial();
     } else { mostrarAlerta("vCalcAlerta", json.msg, "error"); }
   } catch { mostrarAlerta("vCalcAlerta","Error de conexión.","error"); }
+  finally  { vRenderCalcDisplay(); }
 }
 
 async function vAnularUltima() {
@@ -5302,18 +5365,44 @@ async function vCargarHistorial() {
 
 document.addEventListener("keydown", function(e) {
   if (["INPUT","TEXTAREA","SELECT"].includes(document.activeElement.tagName)) return;
+  // F2: cerrar día desde cualquier pantalla
+  if (e.key === "F2") { e.preventDefault(); abrirCierreDia(); return; }
   const cajaActiva  = document.getElementById("caja")?.classList.contains("active");
   const cobroActivo = document.getElementById("ventaTabCobro")?.style.display !== "none"
                    && document.getElementById("ventas")?.classList.contains("active");
   if (!cajaActiva && !cobroActivo) return;
-  const num = cajaActiva ? calcNum : vCalcNum;
-  const del = cajaActiva ? calcDel : vCalcDel;
-  const add = cajaActiva ? calcAdd : vCalcAdd;
+  const num = cajaActiva ? calcNum  : vCalcNum;
+  const del = cajaActiva ? calcDel  : vCalcDel;
+  const add = cajaActiva ? calcAdd  : vCalcAdd;
+  const clr = cajaActiva ? calcClear: vCalcClear;
   if (e.key >= "0" && e.key <= "9")           { e.preventDefault(); num(e.key); }
   else if (e.key === "." || e.key === ",")     { e.preventDefault(); num("."); }
   else if (e.key === "Backspace")              { e.preventDefault(); del(); }
   else if (e.key === "Enter" || e.key === "+") { e.preventDefault(); add(); }
+  else if (e.key === "Escape")                 { e.preventDefault(); clr(); }
 });
+
+function exportarCSV() {
+  const ahora = new Date();
+  const cutoff = new Date(ahora); cutoff.setDate(ahora.getDate() - reportePeriodo);
+  const tx = pedidosTodos.filter(t => parseDate(t.created_at) >= cutoff);
+  if (!tx.length) { alert("No hay datos para exportar."); return; }
+  const rows = [["Fecha","Nombre","Tipo","Precio","Cantidad","Ganancia"]];
+  tx.forEach(t => rows.push([
+    t.created_at,
+    t.nombre,
+    t.tipo === "venta" ? "Venta" : "Pedido",
+    (t.precio  ?? 0).toFixed(2),
+    (t.cantidad ?? 0),
+    (t.ganancia ?? 0).toFixed(2)
+  ]));
+  const csv  = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
+  const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a"); a.href = url;
+  a.download = `nexora_${reportePeriodo}dias.csv`; a.click();
+  URL.revokeObjectURL(url);
+}
 
 async function abrirCierreDia() {
   const overlay = document.getElementById("cierreOverlay");

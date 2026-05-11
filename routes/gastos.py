@@ -43,9 +43,11 @@ def agregar_gasto():
     if fecha_str:
         try:
             partes = fecha_str.split("-")
+            if len(partes) != 3:
+                raise ValueError
             fecha = date(int(partes[0]), int(partes[1]), int(partes[2]))
         except Exception:
-            fecha = date.today()
+            return jsonify({"msg": "Fecha inválida, usá el formato YYYY-MM-DD"}), 400
     else:
         fecha = date.today()
 

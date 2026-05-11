@@ -145,6 +145,18 @@ try:
                     pass
             db.session.commit()
 
+        # Indexes for frequent LIKE queries
+        index_migrations = [
+            "CREATE INDEX IF NOT EXISTS idx_sale_nombre ON sale (nombre)",
+            "CREATE INDEX IF NOT EXISTS idx_sale_created_at ON sale (created_at)",
+        ]
+        for sql in index_migrations:
+            try:
+                db.session.execute(text(sql))
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+
 except Exception as e:
     _startup_error = f"{type(e).__name__}: {e}"
     logging.error(f"DB startup error: {e}")
