@@ -64,6 +64,7 @@ pedidos_bp    = _safe_import("routes.pedidos",     "pedidos_bp")
 gastos_bp      = _safe_import("routes.gastos",       "gastos_bp")
 fiado_bp       = _safe_import("routes.fiado",        "fiado_bp")
 sucursales_bp  = _safe_import("routes.sucursales",   "sucursales_bp")
+exchange_bp    = _safe_import("routes.auth_supabase","exchange_bp")
 
 app.register_blueprint(auth_bp,       url_prefix="/api")
 app.register_blueprint(business_bp,   url_prefix="/api")
@@ -78,6 +79,7 @@ app.register_blueprint(pedidos_bp,    url_prefix="/api")
 app.register_blueprint(gastos_bp,     url_prefix="/api")
 app.register_blueprint(fiado_bp,      url_prefix="/api")
 app.register_blueprint(sucursales_bp, url_prefix="/api")
+app.register_blueprint(exchange_bp,   url_prefix="/api")
 
 try:
     with app.app_context():
@@ -171,6 +173,14 @@ def health():
         "startup_error": _startup_error,
         "python":        sys.version,
         "db":            _db_url.split("@")[-1] if "@" in _db_url else "sqlite",
+    })
+
+
+@app.route("/api/config")
+def config():
+    return jsonify({
+        "supabase_url":      os.environ.get("SUPABASE_URL", ""),
+        "supabase_anon_key": os.environ.get("SUPABASE_ANON_KEY", ""),
     })
 
 

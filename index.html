@@ -103,6 +103,43 @@ body {
   color: #fcd34d;
 }
 
+.auth-forgot {
+  display: block;
+  text-align: right;
+  font-size: 12px;
+  margin-bottom: 14px;
+  opacity: 0.8;
+  padding: 0;
+  cursor: pointer;
+}
+.pw-strength-bar {
+  height: 4px;
+  background: rgba(255,255,255,0.12);
+  border-radius: 2px;
+  margin-top: 8px;
+  overflow: hidden;
+}
+#pwStrengthFill {
+  height: 100%;
+  width: 0;
+  border-radius: 2px;
+  transition: width 0.35s, background 0.35s;
+}
+.pw-strength-label {
+  font-size: 11px;
+  margin-top: 5px;
+  display: block;
+  min-height: 16px;
+  transition: color 0.35s;
+}
+.auth-verify-msg {
+  text-align: center;
+  color: #fcd34d;
+  line-height: 1.6;
+  font-size: 14px;
+  margin-top: 8px;
+}
+
 .link-btn {
   background: none;
   border: none;
@@ -1816,28 +1853,60 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
       </svg>
     </div>
 
-    <!-- CARD -->
-    <div class="auth-card">
+    <!-- VIEW: LOGIN -->
+    <div id="authVLogin" class="auth-card">
       <h1 class="auth-heading">Iniciar sesión</h1>
-
       <div class="auth-field">
-        <label for="username">Usuario</label>
-        <input id="username" autocomplete="username" onkeydown="handleLoginEnter(event)">
+        <label for="authEmail">Email</label>
+        <input id="authEmail" type="email" autocomplete="email" onkeydown="handleLoginEnter(event)">
       </div>
-
       <div class="auth-field">
-        <label for="password">Contraseña</label>
-        <input id="password" type="password" autocomplete="current-password" onkeydown="handleLoginEnter(event)">
+        <label for="authPwd">Contraseña</label>
+        <input id="authPwd" type="password" autocomplete="current-password" onkeydown="handleLoginEnter(event)">
       </div>
-
+      <button class="link-btn auth-forgot" onclick="switchAuthView('reset')">¿Olvidaste tu contraseña?</button>
       <button class="action" id="btnLogin" onclick="login()">Iniciar Sesión</button>
-      <div id="authRespuesta"></div>
     </div>
 
-    <!-- REGISTER BOX -->
-    <div class="auth-register-box">
+    <!-- VIEW: REGISTER -->
+    <div id="authVRegister" class="auth-card" style="display:none">
+      <h1 class="auth-heading">Crear cuenta</h1>
+      <div class="auth-field">
+        <label for="authRegEmail">Email</label>
+        <input id="authRegEmail" type="email" autocomplete="email">
+      </div>
+      <div class="auth-field">
+        <label for="authRegPwd">Contraseña</label>
+        <input id="authRegPwd" type="password" autocomplete="new-password" oninput="updatePasswordStrength(this.value)">
+        <div class="pw-strength-bar"><div id="pwStrengthFill"></div></div>
+        <small id="pwStrengthLabel" class="pw-strength-label"></small>
+      </div>
+      <button class="action" id="btnRegister" onclick="register()">Registrarse</button>
+    </div>
+
+    <!-- VIEW: VERIFY EMAIL -->
+    <div id="authVVerify" class="auth-card" style="display:none">
+      <h1 class="auth-heading">Verificá tu email</h1>
+      <p class="auth-verify-msg">Revisá <strong id="authVerifyEmail"></strong>. Hacé click en el link para activar tu cuenta y luego volvé a iniciar sesión.</p>
+      <button class="action" style="margin-top:18px" onclick="switchAuthView('login')">Volver al inicio</button>
+    </div>
+
+    <!-- VIEW: RESET PASSWORD -->
+    <div id="authVReset" class="auth-card" style="display:none">
+      <h1 class="auth-heading">Recuperar contraseña</h1>
+      <div class="auth-field">
+        <label for="authResetEmail">Email</label>
+        <input id="authResetEmail" type="email" autocomplete="email">
+      </div>
+      <button class="action" id="btnReset" onclick="resetPassword()">Enviar email</button>
+      <button class="link-btn" style="margin-top:12px;display:block;text-align:center" onclick="switchAuthView('login')">← Volver</button>
+    </div>
+
+    <!-- SHARED RESPONSE + BOTTOM LINK -->
+    <div id="authRespuesta"></div>
+    <div class="auth-register-box" id="authBottomBox">
       ¿No tenés cuenta?
-      <button class="link-btn" id="btnRegister" onclick="register()">Registrarse</button>
+      <button class="link-btn" onclick="switchAuthView('register')">Registrarse</button>
     </div>
 
   </div>
@@ -2898,7 +2967,7 @@ function authHeaders() {
 }
 
 function mostrarAlerta(id, msg, tipo) {
-  document.getElementById(id).innerHTML = `<div class="alert alert-${tipo}">${msg}</div>`;
+  document.getElementById(id).innerHTML = `<div class="alert alert-${tipo}">${escHtml(msg)}</div>`;
 }
 
 function limpiarAlerta(id) { document.getElementById(id).innerHTML = ""; }
@@ -2920,8 +2989,14 @@ function toggleAlquiler() {
   document.getElementById("alquiler").disabled = document.getElementById("propietario").checked;
 }
 function handleUnauthorized() {
-  mostrarAlerta("authRespuesta", "Tu sesión expiró. Iniciá sesión nuevamente.", "error");
-  logout();
+  const wasToken = token; token = null;
+  if (!wasToken) return;
+  const refreshToken = localStorage.getItem("nexora_refresh");
+  if (refreshToken) {
+    _refreshSession(refreshToken).catch(() => _forceLogin("Tu sesión expiró. Iniciá sesión nuevamente."));
+  } else {
+    _forceLogin("Tu sesión expiró. Iniciá sesión nuevamente.");
+  }
 }
 
 
@@ -3167,9 +3242,76 @@ function setFechaHoy() {
 function irALogin() {
   document.getElementById("landing").classList.add("gone");
   document.getElementById("auth").classList.add("active");
+  const refreshToken = localStorage.getItem("nexora_refresh");
+  if (refreshToken && !token) {
+    switchAuthView("login");
+    const btn = document.getElementById("btnLogin");
+    btn.disabled = true;
+    btn.textContent = "Entrando...";
+    _refreshSession(refreshToken)
+      .catch(() => {})
+      .finally(() => {
+        btn.disabled = false;
+        btn.textContent = "Iniciar Sesión";
+        if (!token) switchAuthView("login");
+      });
+    return;
+  }
+  switchAuthView("login");
 }
 
-function logout() {
+
+// ─── SUPABASE AUTH ────────────────────────────────────────────────────────────
+
+let _authView = "login";
+
+function switchAuthView(view) {
+  _authView = view;
+  limpiarAlerta("authRespuesta");
+  ["authVLogin","authVRegister","authVVerify","authVReset"].forEach(id => {
+    document.getElementById(id).style.display = "none";
+  });
+  const vmap = { login:"authVLogin", register:"authVRegister", verify:"authVVerify", reset:"authVReset" };
+  document.getElementById(vmap[view]).style.display = "";
+  const box = document.getElementById("authBottomBox");
+  if (view === "login") {
+    box.innerHTML = '¿No tenés cuenta? <button class="link-btn" onclick="switchAuthView(\'register\')">Registrarse</button>';
+    box.style.display = "";
+  } else if (view === "register") {
+    box.innerHTML = '¿Ya tenés cuenta? <button class="link-btn" onclick="switchAuthView(\'login\')">Iniciar sesión</button>';
+    box.style.display = "";
+  } else {
+    box.style.display = "none";
+  }
+}
+
+function updatePasswordStrength(pwd) {
+  const fill  = document.getElementById("pwStrengthFill");
+  const label = document.getElementById("pwStrengthLabel");
+  if (!fill) return;
+  let score = 0;
+  if (pwd.length >= 8)           score++;
+  if (pwd.length >= 12)          score++;
+  if (/[A-Z]/.test(pwd))        score++;
+  if (/[0-9]/.test(pwd))        score++;
+  if (/[^A-Za-z0-9]/.test(pwd)) score++;
+  const levels = [
+    { pct:  0, color: "transparent", text: "" },
+    { pct: 20, color: "#ef4444",     text: "Muy débil" },
+    { pct: 40, color: "#f97316",     text: "Débil" },
+    { pct: 60, color: "#eab308",     text: "Regular" },
+    { pct: 80, color: "#22c55e",     text: "Fuerte" },
+    { pct:100, color: "#16a34a",     text: "Muy fuerte" },
+  ];
+  const lvl = levels[Math.min(score, 5)];
+  fill.style.width      = lvl.pct + "%";
+  fill.style.background = lvl.color;
+  label.textContent     = lvl.text;
+  label.style.color     = lvl.color;
+}
+
+
+function _doLogoutUI() {
   document.getElementById("onboardingOverlay").classList.remove("open");
   document.body.classList.remove("app-active");
   token = null; userRole = "admin"; sucursalId = null; sucursalNombreUser = "";
@@ -3179,66 +3321,133 @@ function logout() {
   if (reporteChart) { reporteChart.destroy(); reporteChart = null; }
   if (dashChart) { dashChart.destroy(); dashChart = null; }
   document.getElementById("topbar").classList.remove("visible");
-  document.getElementById("username").value = "";
-  document.getElementById("password").value = "";
+  const elEmail = document.getElementById("authEmail");
+  const elPwd   = document.getElementById("authPwd");
+  if (elEmail) elEmail.value = "";
+  if (elPwd)   elPwd.value   = "";
   limpiarAlerta("authRespuesta");
   closeSidebar();
   document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
   document.getElementById("auth").classList.remove("active");
   document.getElementById("landing").classList.remove("gone");
+  switchAuthView("login");
+}
+
+function _forceLogin(msg) {
+  _doLogoutUI();
+  setTimeout(() => mostrarAlerta("authRespuesta", msg, "error"), 50);
+}
+
+function _enterApp(json) {
+  token    = json.token;
+  userRole = json.role || "admin";
+  if (json.refresh_token) localStorage.setItem("nexora_refresh", json.refresh_token);
+  document.body.classList.add("app-active");
+  document.getElementById("auth").classList.remove("active");
+  document.getElementById("landing").classList.add("gone");
+  if (userRole === "empleado") {
+    sucursalId         = json.sucursal_id;
+    sucursalNombreUser = json.sucursal_nombre || "Sucursal";
+    document.getElementById("cajaBranchName").textContent = sucursalNombreUser;
+    void document.getElementById("caja").offsetWidth;
+    document.getElementById("caja").classList.add("active");
+    cargarCaja();
+  } else {
+    document.getElementById("topbar").classList.add("visible");
+    setFechaHoy();
+    const modo = localStorage.getItem("nexora_modo");
+    applyModo(modo || "avanzado");
+    if (!modo) { document.getElementById("onboardingOverlay").classList.add("open"); }
+    else navTo("ia");
+  }
+}
+
+async function _refreshSession(refreshToken) {
+  const res  = await fetch(`${API}/api/auth/refresh`, {
+    method:  "POST",
+    headers: { "Content-Type": "application/json" },
+    body:    JSON.stringify({ refresh_token: refreshToken }),
+  });
+  const json = await res.json();
+  if (res.ok) {
+    _enterApp(json);
+  } else {
+    localStorage.removeItem("nexora_refresh");
+    throw new Error(json.msg);
+  }
+}
+
+async function resetPassword() {
+  const email = (document.getElementById("authResetEmail").value || "").trim();
+  if (!email) { mostrarAlerta("authRespuesta", "Ingresá tu email.", "error"); return; }
+  setLoading("btnReset", true);
+  limpiarAlerta("authRespuesta");
+  try {
+    const res  = await fetch(`${API}/api/auth/reset`, {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ email, redirect_to: window.location.origin + "/" }),
+    });
+    const json = await res.json();
+    mostrarAlerta("authRespuesta", json.msg, res.ok ? "success" : "error");
+  } catch { mostrarAlerta("authRespuesta", "Error de conexión.", "error"); }
+  finally  { setLoading("btnReset", false); }
+}
+
+function logout() {
+  const rt = localStorage.getItem("nexora_refresh");
+  if (rt) {
+    fetch(`${API}/api/auth/logout`, {
+      method:  "POST",
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + (token || "") },
+    }).catch(() => {});
+  }
+  localStorage.removeItem("nexora_refresh");
+  _doLogoutUI();
 }
 
 
 // ─── AUTH ────────────────────────────────────────────────────────────────────
 
 async function register() {
-  const username = document.getElementById("username").value.trim();
-  const password = document.getElementById("password").value;
-  if (username.length < 3) { mostrarAlerta("authRespuesta", "El usuario debe tener al menos 3 caracteres.", "error"); return; }
-  if (password.length < 6) { mostrarAlerta("authRespuesta", "La contraseña debe tener al menos 6 caracteres.", "error"); return; }
+  const email    = (document.getElementById("authRegEmail").value || "").trim();
+  const password = document.getElementById("authRegPwd").value || "";
+  if (!email)              { mostrarAlerta("authRespuesta", "Ingresá un email válido.", "error"); return; }
+  if (password.length < 8) { mostrarAlerta("authRespuesta", "La contraseña debe tener al menos 8 caracteres.", "error"); return; }
   setLoading("btnRegister", true);
+  limpiarAlerta("authRespuesta");
   try {
-    const res  = await fetch(`${API}/api/register`, { method: "POST", headers: { "Content-Type":"application/json" }, body: JSON.stringify({ username, password }) });
+    const res  = await fetch(`${API}/api/auth/register`, {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ email, password }),
+    });
     const json = await res.json();
-    mostrarAlerta("authRespuesta", json.msg, res.ok ? "success" : "error");
+    if (res.ok) {
+      document.getElementById("authVerifyEmail").textContent = email;
+      switchAuthView("verify");
+    } else {
+      mostrarAlerta("authRespuesta", json.msg, "error");
+    }
   } catch { mostrarAlerta("authRespuesta", "Error de conexión con el servidor.", "error"); }
   finally  { setLoading("btnRegister", false); }
 }
 
 async function login() {
-  const username = document.getElementById("username").value.trim();
-  const password = document.getElementById("password").value;
-  if (!username || !password) { mostrarAlerta("authRespuesta", "Completá usuario y contraseña.", "error"); return; }
+  const email    = (document.getElementById("authEmail").value || "").trim();
+  const password = document.getElementById("authPwd").value || "";
+  if (!email || !password) { mostrarAlerta("authRespuesta", "Completá email y contraseña.", "error"); return; }
   setLoading("btnLogin", true);
+  limpiarAlerta("authRespuesta");
   try {
-    const res  = await fetch(`${API}/api/login`, { method: "POST", headers: { "Content-Type":"application/json" }, body: JSON.stringify({ username, password }) });
+    const res  = await fetch(`${API}/api/auth/login`, {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ email, password }),
+    });
     const json = await res.json();
-    if (res.ok) {
-      token    = json.token;
-      userRole = json.role || "admin";
-      document.body.classList.add("app-active");
-      document.getElementById("auth").classList.remove("active");
-      if (userRole === "empleado") {
-        sucursalId         = json.sucursal_id;
-        sucursalNombreUser = json.sucursal_nombre || "Sucursal";
-        document.getElementById("cajaBranchName").textContent = sucursalNombreUser;
-        void document.getElementById("caja").offsetWidth;
-        document.getElementById("caja").classList.add("active");
-        cargarCaja();
-      } else {
-        document.getElementById("topbar").classList.add("visible");
-        setFechaHoy();
-        const modo = localStorage.getItem("nexora_modo");
-        applyModo(modo || "avanzado");
-        if (!modo) {
-          document.getElementById("onboardingOverlay").classList.add("open");
-        } else {
-          navTo("ia");
-        }
-      }
-    } else {
-      mostrarAlerta("authRespuesta", json.msg, "error");
-    }
+    if (res.ok) { _enterApp(json); }
+    else        { mostrarAlerta("authRespuesta", json.msg, "error"); }
   } catch { mostrarAlerta("authRespuesta", "Error de conexión con el servidor.", "error"); }
   finally  { setLoading("btnLogin", false); }
 }
@@ -5604,6 +5813,7 @@ if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("/sw.js").catch(() => {});
   });
 }
+
 </script>
 </body>
 </html>
