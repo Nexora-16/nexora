@@ -1,9 +1,11 @@
 import os
 import requests
 
-GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
-GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
-GROQ_MODEL = "llama-3.1-8b-instant"
+GROQ_URL   = "https://api.groq.com/openai/v1/chat/completions"
+GROQ_MODEL = "llama-3.3-70b-versatile"
+
+def _key():
+    return os.environ.get("GROQ_API_KEY", "")
 
 
 def _primer_producto(contexto):
@@ -34,6 +36,7 @@ def buscar_competencia(termino, ubicacion):
 
 
 def resumen_dia_ia(stats):
+    GROQ_API_KEY = _key()
     fecha_str = __import__("datetime").date.today().strftime("%d/%m/%Y")
     if not GROQ_API_KEY:
         total = stats.get("total_ventas", 0)
@@ -79,6 +82,7 @@ Resumen del día:"""
 
 
 def preguntar_ia(contexto, pregunta):
+    GROQ_API_KEY = _key()
     if not GROQ_API_KEY:
         return "Para activar la IA configurá la variable de entorno GROQ_API_KEY con tu clave de Groq (groq.com, es gratis)."
 
