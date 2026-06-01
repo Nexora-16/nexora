@@ -2058,16 +2058,10 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
     <button id="navInsumos" data-screen="insumos" onclick="navTo('insumos')">
       <span class="nav-icon">🧂</span> Insumos
     </button>
-    <button id="navProduccion" data-screen="produccion" onclick="navTo('produccion')">
-      <span class="nav-icon">👨‍🍳</span> Producción
-    </button>
 
     <div class="nav-section-label">Finanzas</div>
     <button data-screen="dashboard" onclick="navTo('dashboard')">
-      <span class="nav-icon">🏠</span> Dashboard
-    </button>
-    <button data-screen="reportes" onclick="navTo('reportes')">
-      <span class="nav-icon">📈</span> Reportes
+      <span class="nav-icon">📊</span> Resumen
     </button>
     <button data-screen="gastos" onclick="navTo('gastos')">
       <span class="nav-icon">💸</span> Gastos
@@ -2112,12 +2106,15 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
   </div>
 </div>
 
-<!-- ═══════════════ DASHBOARD ═══════════════ -->
+<!-- ═══════════════ DASHBOARD / RESUMEN ═══════════════ -->
 <div id="dashboard" class="screen">
   <div class="app-screen">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-      <h2 style="margin:0;">Dashboard</h2>
-      <button class="btn-cierre-hdr" onclick="abrirCierreDia()">☀ Cerrar día</button>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+      <h2 style="margin:0;">Resumen</h2>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn-cierre-hdr" onclick="exportarCSV()">↓ CSV</button>
+        <button class="btn-cierre-hdr" onclick="abrirCierreDia()">☀ Cerrar día</button>
+      </div>
     </div>
     <div id="dashLoading" class="dash-loading" style="display:none;">Cargando datos…</div>
 
@@ -2157,10 +2154,53 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
       </div>
     </div>
 
-    <!-- Gráfico semanal -->
-    <div class="card" id="weeklyChartCard" style="display:none;">
-      <h3>Ingresos — últimos 7 días</h3>
-      <div class="chart-wrap"><canvas id="dashWeeklyCanvas"></canvas></div>
+    <!-- Gráfico unificado con selector de período -->
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px;">
+        <h3 style="margin:0;">Ingresos</h3>
+        <div class="periodo-tabs" style="margin-bottom:0;">
+          <button class="periodo-tab active" onclick="setPeriodo(7,this)">7 días</button>
+          <button class="periodo-tab"        onclick="setPeriodo(30,this)">30 días</button>
+          <button class="periodo-tab"        onclick="setPeriodo(90,this)">3 meses</button>
+        </div>
+      </div>
+      <div class="reporte-metrics">
+        <div class="metric">
+          <div class="metric-label">Transacciones</div>
+          <div class="metric-value" id="rTxTotal">0</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Ingresos período</div>
+          <div class="metric-value green" id="rIngresos">$0</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Ganancia período</div>
+          <div class="metric-value green" id="rGanancia">$0</div>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="reporteCanvas"></canvas></div>
+    </div>
+
+    <!-- Top productos + top clientes -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+      <div class="card">
+        <h3>Más vendidos</h3>
+        <div id="topProductos">
+          <div class="empty-state" style="padding:20px 0;"><p>Sin datos aún</p></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Top clientes</h3>
+        <div id="topClientes">
+          <div class="empty-state" style="padding:20px 0;"><p>Sin datos aún</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Punto de equilibrio -->
+    <div class="card" id="eqCard" style="display:none;">
+      <h3>Punto de Equilibrio</h3>
+      <div id="eqContent"></div>
     </div>
 
     <!-- Lista productos -->
@@ -2169,7 +2209,7 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
       <div id="listaProductos"></div>
     </div>
 
-    <!-- Empty state dashboard -->
+    <!-- Empty state -->
     <div class="card" id="dashEmpty">
       <div class="empty-state">
         <div class="empty-icon">📦</div>
@@ -2177,7 +2217,6 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
         <p>Agregá tu primer producto desde <strong>Inventario</strong> para ver el análisis de tu negocio.</p>
       </div>
     </div>
-
   </div>
 </div>
 
@@ -2380,66 +2419,6 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
   </div>
 </div>
 
-<!-- ═══════════════ REPORTES ═══════════════ -->
-<div id="reportes" class="screen">
-  <div class="app-screen" style="max-width:900px;">
-    <h2>Reportes</h2>
-
-    <div class="card">
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
-        <div class="periodo-tabs" style="margin-bottom:0;">
-          <button class="periodo-tab active" onclick="setPeriodo(7,this)">7 días</button>
-          <button class="periodo-tab"        onclick="setPeriodo(30,this)">30 días</button>
-          <button class="periodo-tab"        onclick="setPeriodo(90,this)">3 meses</button>
-        </div>
-        <button class="btn-cierre-hdr" onclick="exportarCSV()">↓ Exportar CSV</button>
-      </div>
-
-      <div class="reporte-metrics">
-        <div class="metric">
-          <div class="metric-label">Transacciones</div>
-          <div class="metric-value" id="rTxTotal">0</div>
-        </div>
-        <div class="metric">
-          <div class="metric-label">Ingresos</div>
-          <div class="metric-value green" id="rIngresos">$0</div>
-        </div>
-        <div class="metric">
-          <div class="metric-label">Ganancia</div>
-          <div class="metric-value green" id="rGanancia">$0</div>
-        </div>
-      </div>
-
-      <h3 style="margin-bottom:10px;">Ingresos diarios</h3>
-      <div class="chart-wrap"><canvas id="reporteCanvas"></canvas></div>
-    </div>
-
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-      <div class="card">
-        <h3>Top productos vendidos</h3>
-        <div id="topProductos">
-          <div class="empty-state" style="padding:20px 0;">
-            <p>Sin datos aún</p>
-          </div>
-        </div>
-      </div>
-      <div class="card">
-        <h3>Top clientes</h3>
-        <div id="topClientes">
-          <div class="empty-state" style="padding:20px 0;">
-            <p>Sin datos aún</p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Punto de equilibrio -->
-    <div class="card" id="eqCard" style="display:none;">
-      <h3>Punto de Equilibrio</h3>
-      <div id="eqContent"></div>
-    </div>
-  </div>
-</div>
 
 <!-- ═══════════════ GASTOS ═══════════════ -->
 <div id="gastos" class="screen">
@@ -2685,56 +2664,6 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
   </div>
 </div>
 
-<!-- ═══════════════ PRODUCCIÓN ═══════════════ -->
-<div id="produccion" class="screen">
-  <div class="app-screen" style="max-width:900px;">
-    <h2>Producción</h2>
-
-    <!-- Sugerencias -->
-    <div class="card" id="sugCard" style="display:none;">
-      <h3>Sugerencias para hoy</h3>
-      <div id="sugContent"></div>
-    </div>
-
-    <!-- Formulario -->
-    <div class="card">
-      <h3>Registrar Producción</h3>
-      <select id="prodProducto" class="form-select" onchange="onProdProductoChange()">
-        <option value="">Seleccioná un producto...</option>
-      </select>
-      <div style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end;">
-        <input id="prodCantidad" type="number" min="0.001" step="0.001" placeholder="Cantidad a producir" value="1" oninput="renderRequirements()">
-        <button class="action" id="btnProducir" onclick="registrarProduccion()" style="width:auto;padding:12px 22px;margin-bottom:10px;">Producir</button>
-      </div>
-      <div class="prod-requirements" id="prodRequirements"></div>
-      <div id="respuestaProduccion"></div>
-    </div>
-
-    <!-- Historial -->
-    <div class="card" id="produccionEmpty">
-      <div class="empty-state">
-        <div class="empty-icon">👨‍🍳</div>
-        <h3>Sin producción registrada</h3>
-        <p>Registrá tu primera tanda de producción.</p>
-      </div>
-    </div>
-
-    <div class="card" id="produccionCard" style="display:none; padding:0; overflow:hidden;">
-      <div class="inv-wrap">
-        <table class="inv-table">
-          <thead>
-            <tr>
-              <th>Fecha</th>
-              <th>Producto</th>
-              <th>Cantidad producida</th>
-            </tr>
-          </thead>
-          <tbody id="produccionBody"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-</div>
 
 <!-- ═══════════════ MODAL RECETA ═══════════════ -->
 <div class="modal-overlay" id="modalReceta">
@@ -3010,7 +2939,7 @@ function invalidate(...sections) { sections.forEach(s => delete _loaded[s]); }
 
 const API = "";
 
-const SCREEN_TITLES = { ia: "Asistente IA", dashboard: "Dashboard", inventario: "Inventario", ventas: "Ventas", clientes: "Clientes", reportes: "Reportes", gastos: "Gastos", insumos: "Insumos", produccion: "Producción", recursos: "Recursos", sucursales: "Sucursales", pedidos: "Pedidos", fiado: "Fiado" };
+const SCREEN_TITLES = { ia: "Asistente IA", dashboard: "Resumen", inventario: "Inventario", ventas: "Ventas", clientes: "Clientes", gastos: "Gastos", insumos: "Insumos", recursos: "Recursos", sucursales: "Sucursales", pedidos: "Pedidos", fiado: "Fiado" };
 
 // ─── HELPERS ────────────────────────────────────────────────────────────────
 
@@ -3124,7 +3053,8 @@ function navTo(pantalla) {
   switch (pantalla) {
     case "dashboard":
       if (_loaded.productos) renderInventario(); else cargarProductos();
-      cargarCajaHoy(); // always refresh — shows today's live data
+      cargarCajaHoy();
+      if (_loaded.reportes) renderReportes(); else cargarReportes();
       break;
     case "inventario":
       if (_loaded.productos) renderInventario(); else cargarProductos();
@@ -3142,19 +3072,11 @@ function navTo(pantalla) {
       else { cargarFiados(); cargarClientes(); }
       if (!_loaded.productos) cargarProductos();
       break;
-    case "reportes":
-      if (_loaded.reportes) renderReportes(); else cargarReportes();
-      break;
     case "insumos":
       if (_loaded.insumos) renderInsumos(); else cargarInsumos();
       if (_loaded.compras) { renderPendientes(compras.filter(c=>c.estado==="pendiente")); renderCompras(compras.filter(c=>c.estado==="llegado")); }
       else cargarCompras();
-      cargarConsumo(); // lightweight, always refresh
-      break;
-    case "produccion":
-      if (!_loaded.productos) cargarProductos();
-      if (!_loaded.insumos)   cargarInsumos();
-      cargarProduccion(); cargarSugerencias();
+      cargarConsumo();
       break;
     case "ia":
       cargarHistorialChat(); // chatLoaded guard is inside
