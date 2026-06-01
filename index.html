@@ -153,6 +153,25 @@ body {
 .link-btn:hover { color: #fde68a; }
 
 /* ══════════════════════════════════════════════
+   OFFLINE BANNER
+══════════════════════════════════════════════ */
+#offlineBanner {
+  display: none;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  z-index: 9999;
+  background: #1c0a00;
+  border-top: 1px solid rgba(245,158,11,0.3);
+  padding: 10px 20px;
+  font-size: 13px;
+  color: #fcd34d;
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.04em;
+}
+#offlineBanner.show { display: block; }
+
+/* ══════════════════════════════════════════════
    TOPBAR
 ══════════════════════════════════════════════ */
 .topbar {
@@ -861,6 +880,43 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
 /* ══════════════════════════════════════════════
    FIADO
 ══════════════════════════════════════════════ */
+.fiado-total-card {
+  background: rgba(248,113,113,0.08);
+  border: 1px solid rgba(248,113,113,0.22);
+  border-radius: 16px;
+  padding: 20px 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.fiado-total-label { font-size: 12px; color: #fcd34d; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+.fiado-total-val   { font-size: 28px; font-weight: 800; color: #f87171; line-height: 1; }
+.fiado-total-sub   { font-size: 12px; color: rgba(254,243,199,0.45); margin-top: 4px; }
+
+.fiado-group {
+  background: rgba(20,8,0,0.5);
+  border: 1px solid rgba(245,158,11,0.1);
+  border-radius: 14px;
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+.fiado-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 13px 16px;
+  border-bottom: 1px solid rgba(245,158,11,0.08);
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.fiado-group-nombre { font-weight: 600; font-size: 14px; color: #fef3c7; }
+.fiado-group-saldo  { font-weight: 700; font-size: 15px; color: #f87171; }
+.fiado-group-saldo.cero { color: #4ade80; }
+.fiado-group-body   { padding: 6px 10px 10px; }
+
 .fiado-badge {
   display: inline-flex;
   align-items: center;
@@ -1800,6 +1856,9 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
 </head>
 <body>
 
+<!-- OFFLINE BANNER -->
+<div id="offlineBanner">⚡ Sin conexión — mostrando datos guardados. Los cambios se guardarán cuando vuelva internet.</div>
+
 <!-- ═══════════════ LANDING ═══════════════ -->
 <div id="landing">
   <div class="l-particles" id="lParticles"></div>
@@ -2049,6 +2108,9 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
     </button>
     <button data-screen="clientes" onclick="navTo('clientes')">
       <span class="nav-icon">👥</span> Clientes
+    </button>
+    <button data-screen="fiado" onclick="navTo('fiado')">
+      <span class="nav-icon">📋</span> Fiado
     </button>
 
     <div class="nav-section-label">Inventario</div>
@@ -2482,6 +2544,38 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
       <button class="action secondary" onclick="cerrarModalPedido()">Cancelar</button>
     </div>
     <div id="respuestaModalPedido"></div>
+  </div>
+</div>
+
+<!-- ═══════════════ FIADO ═══════════════ -->
+<div id="fiado" class="screen">
+  <div class="app-screen" style="max-width:700px;">
+    <h2>Fiado</h2>
+
+    <!-- Resumen total -->
+    <div class="fiado-total-card">
+      <div>
+        <div class="fiado-total-label">Total pendiente</div>
+        <div class="fiado-total-val" id="fiadoTotalVal">$0</div>
+        <div class="fiado-total-sub" id="fiadoTotalSub">0 clientes con deuda</div>
+      </div>
+      <div id="fiadoTotalPagadoMes" style="text-align:right;">
+        <div class="fiado-total-label">Cobrado este mes</div>
+        <div style="font-size:20px;font-weight:700;color:#4ade80;" id="fiadoCobradoMes">$0</div>
+      </div>
+    </div>
+
+    <!-- Lista vacía -->
+    <div class="card" id="fiadoScreenEmpty">
+      <div class="empty-state">
+        <div class="empty-icon">📋</div>
+        <h3>Sin fiados pendientes</h3>
+        <p>Cuando un cliente lleve algo fiado, aparecerá aquí con su saldo.</p>
+      </div>
+    </div>
+
+    <!-- Grupos por cliente -->
+    <div id="fiadoScreenList"></div>
   </div>
 </div>
 
@@ -2939,7 +3033,7 @@ function invalidate(...sections) { sections.forEach(s => delete _loaded[s]); }
 
 const API = "";
 
-const SCREEN_TITLES = { ia: "Asistente IA", dashboard: "Resumen", inventario: "Inventario", ventas: "Ventas", clientes: "Clientes", gastos: "Gastos", insumos: "Insumos", recursos: "Recursos", sucursales: "Sucursales", pedidos: "Pedidos", fiado: "Fiado" };
+const SCREEN_TITLES = { ia: "Asistente IA", dashboard: "Resumen", inventario: "Inventario", ventas: "Ventas", clientes: "Clientes", fiado: "Fiado", gastos: "Gastos", insumos: "Insumos", recursos: "Recursos", sucursales: "Sucursales", pedidos: "Pedidos" };
 
 // ─── HELPERS ────────────────────────────────────────────────────────────────
 
@@ -3072,6 +3166,10 @@ function navTo(pantalla) {
       else { cargarFiados(); cargarClientes(); }
       if (!_loaded.productos) cargarProductos();
       break;
+    case "fiado":
+      if (_loaded.fiados && _loaded.clientes) renderFiadoScreen();
+      else { Promise.all([cargarFiados(), cargarClientes()]).then(() => renderFiadoScreen()); }
+      break;
     case "insumos":
       if (_loaded.insumos) renderInsumos(); else cargarInsumos();
       if (_loaded.compras) { renderPendientes(compras.filter(c=>c.estado==="pendiente")); renderCompras(compras.filter(c=>c.estado==="llegado")); }
@@ -3164,6 +3262,15 @@ function setFechaHoy() {
     p.style.animationDelay = (Math.random() * 10) + 's';
     c.appendChild(p);
   }
+})();
+
+// Offline detection
+(function() {
+  var banner = document.getElementById("offlineBanner");
+  function update() { banner.classList.toggle("show", !navigator.onLine); }
+  window.addEventListener("online",  update);
+  window.addEventListener("offline", update);
+  update();
 })();
 
 // Scroll reveal for stats and feature cards
@@ -5153,7 +5260,7 @@ async function pagarFiado(id) {
   try {
     const res = await fetch(`${API}/api/fiado/${id}/pagar`, { method:"PUT", headers:authHeaders() });
     if (res.status===401) { handleUnauthorized(); return; }
-    if (res.ok) { await cargarFiados(); renderFiadoList(fiadoClienteActual); renderClientes(); }
+    if (res.ok) { await cargarFiados(); renderFiadoList(fiadoClienteActual); renderClientes(); if (_loaded.fiados) renderFiadoScreen(); }
   } catch { /* silencioso */ }
 }
 
@@ -5162,13 +5269,102 @@ async function eliminarFiado(id) {
   try {
     const res = await fetch(`${API}/api/fiado/${id}`, { method:"DELETE", headers:authHeaders() });
     if (res.status===401) { handleUnauthorized(); return; }
-    if (res.ok) { await cargarFiados(); renderFiadoList(fiadoClienteActual); renderClientes(); }
+    if (res.ok) { await cargarFiados(); renderFiadoList(fiadoClienteActual); renderClientes(); if (_loaded.fiados) renderFiadoScreen(); }
   } catch { /* silencioso */ }
 }
 
 function cerrarModalFiado() {
   fiadoClienteActual = null;
   document.getElementById("modalFiado").classList.remove("open");
+}
+
+function renderFiadoScreen() {
+  const fmt = v => "$" + v.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const ahora = new Date();
+  const mesActual = ahora.getMonth();
+  const anioActual = ahora.getFullYear();
+
+  // Agrupar pendientes por cliente
+  const pendientes = fiadoTodos.filter(f => !f.pagado);
+  const porCliente = {};
+  pendientes.forEach(f => {
+    if (!porCliente[f.client_id]) porCliente[f.client_id] = { nombre: f.client_nombre, items: [] };
+    porCliente[f.client_id].items.push(f);
+  });
+
+  // Total pendiente
+  const totalPendiente = pendientes.reduce((s, f) => s + f.monto, 0);
+  const clientesConDeuda = Object.keys(porCliente).length;
+  document.getElementById("fiadoTotalVal").textContent = fmt(totalPendiente);
+  document.getElementById("fiadoTotalSub").textContent =
+    clientesConDeuda === 0 ? "Sin deudas pendientes"
+    : clientesConDeuda === 1 ? "1 cliente con deuda"
+    : `${clientesConDeuda} clientes con deuda`;
+
+  // Cobrado este mes
+  const cobradoMes = fiadoTodos
+    .filter(f => f.pagado && f.pagado_at)
+    .filter(f => {
+      const [d, m, y] = (f.pagado_at || "").split("/");
+      return parseInt(m) - 1 === mesActual && parseInt(y) === anioActual;
+    })
+    .reduce((s, f) => s + f.monto, 0);
+  document.getElementById("fiadoCobradoMes").textContent = fmt(cobradoMes);
+
+  const emptyEl = document.getElementById("fiadoScreenEmpty");
+  const listEl  = document.getElementById("fiadoScreenList");
+
+  if (clientesConDeuda === 0) {
+    emptyEl.style.display = "";
+    listEl.innerHTML = "";
+    return;
+  }
+  emptyEl.style.display = "none";
+
+  listEl.innerHTML = Object.values(porCliente)
+    .sort((a, b) => {
+      const sa = a.items.reduce((s, f) => s + f.monto, 0);
+      const sb = b.items.reduce((s, f) => s + f.monto, 0);
+      return sb - sa;
+    })
+    .map(grupo => {
+      const saldo = grupo.items.reduce((s, f) => s + f.monto, 0);
+      const rows  = grupo.items
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+        .map(f => `
+          <div class="fiado-item">
+            <span class="fiado-concepto">${escHtml(f.concepto)}</span>
+            <span style="font-size:11px;color:rgba(254,243,199,0.38);">${f.created_at.slice(0,10)}</span>
+            <span class="fiado-monto">${fmt(f.monto)}</span>
+            <button class="btn-icon" style="background:rgba(74,222,128,0.13);color:#4ade80;width:30px;height:30px;font-size:13px;" onclick="pagarFiadoScreen(${f.id})" title="Marcar pagado">✓</button>
+            <button class="btn-icon btn-delete" style="width:30px;height:30px;font-size:12px;" onclick="eliminarFiadoScreen(${f.id})" title="Eliminar">✕</button>
+          </div>`).join("");
+      return `
+        <div class="fiado-group">
+          <div class="fiado-group-header">
+            <span class="fiado-group-nombre">👤 ${escHtml(grupo.nombre)}</span>
+            <span class="fiado-group-saldo${saldo === 0 ? " cero" : ""}">Debe ${fmt(saldo)}</span>
+          </div>
+          <div class="fiado-group-body">${rows}</div>
+        </div>`;
+    }).join("");
+}
+
+async function pagarFiadoScreen(id) {
+  try {
+    const res = await fetch(`${API}/api/fiado/${id}/pagar`, { method: "PUT", headers: authHeaders() });
+    if (res.status === 401) { handleUnauthorized(); return; }
+    if (res.ok) { await cargarFiados(); renderFiadoScreen(); if (fiadoClienteActual) renderFiadoList(fiadoClienteActual); renderClientes(); }
+  } catch { /* silencioso */ }
+}
+
+async function eliminarFiadoScreen(id) {
+  if (!confirm("¿Eliminar esta deuda?")) return;
+  try {
+    const res = await fetch(`${API}/api/fiado/${id}`, { method: "DELETE", headers: authHeaders() });
+    if (res.status === 401) { handleUnauthorized(); return; }
+    if (res.ok) { await cargarFiados(); renderFiadoScreen(); renderClientes(); }
+  } catch { /* silencioso */ }
 }
 document.getElementById("modalFiado").addEventListener("click", function(e) { if(e.target===this) cerrarModalFiado(); });
 

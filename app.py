@@ -164,6 +164,16 @@ except Exception as e:
     logging.error(f"DB startup error: {e}")
 
 
+@app.route("/api/keepalive")
+def keepalive():
+    try:
+        from models.usuario import Usuario
+        Usuario.query.limit(1).first()
+        return jsonify({"ok": True})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
 @app.route("/health")
 def health():
     return jsonify({
