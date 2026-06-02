@@ -4722,50 +4722,66 @@ function hoyStr() {
 
 async function cargarCajaHoy() {
   try {
-    const [rV, rP, rG, rProd] = await Promise.all([
+    const [rV, rP, rG, rProd, rF] = await Promise.all([
       fetch(`${API}/api/ventas`,    { headers: authHeaders() }),
       fetch(`${API}/api/pedidos`,   { headers: authHeaders() }),
       fetch(`${API}/api/gastos`,    { headers: authHeaders() }),
-      fetch(`${API}/api/produccion`,{ headers: authHeaders() })
+      fetch(`${API}/api/produccion`,{ headers: authHeaders() }),
+      fetch(`${API}/api/fiado`,     { headers: authHeaders() }),
     ]);
     const hoy          = hoyStr();
     const mesActual    = hoy.slice(3); // "MM/YYYY"
-    const todasVentas  = rV.ok    ? await rV.json()    : [];
-    const todosPedidos = rP.ok    ? await rP.json()    : [];
-    const todosGastos  = rG.ok    ? await rG.json()    : [];
+    const todasVentas  = rV.ok  ? await rV.json()    : [];
+    const todosPedidos = rP.ok  ? await rP.json()    : [];
+    const todosGastos  = rG.ok  ? await rG.json()    : [];
+    const todosFiados  = rF.ok  ? await rF.json()    : [];
+
+    // Solo fiados cobrados (pagado=true, usar pagado_at como fecha)
+    const fiadosCobrados = todosFiados.filter(f => f.pagado && f.pagado_at);
+
     const ventasHoy    = todasVentas.filter(v  => v.created_at.startsWith(hoy));
     const pedidosHoy   = todosPedidos.filter(p => p.created_at.startsWith(hoy));
     const gastosHoy    = todosGastos.filter(g  => g.fecha === hoy);
+    const fiadosHoy    = fiadosCobrados.filter(f => f.pagado_at === hoy);
     const prodHoy      = (rProd.ok ? await rProd.json() : []).filter(p => p.created_at.startsWith(hoy));
+
     const ventasMes    = todasVentas.filter(v  => v.created_at.slice(3,10) === mesActual || v.created_at.slice(3) === mesActual);
     const pedidosMes   = todosPedidos.filter(p => p.created_at.slice(3,10) === mesActual || p.created_at.slice(3) === mesActual);
     const gastosMes    = todosGastos.filter(g  => g.fecha.slice(3) === mesActual);
-    renderCajaHoy(ventasHoy, pedidosHoy, gastosHoy, prodHoy, hoy);
-    renderKPIs(ventasMes, pedidosMes, gastosMes, ventasHoy, pedidosHoy);
-    renderDashboardChart(todasVentas, todosPedidos);
+    const fiadosMes    = fiadosCobrados.filter(f => f.pagado_at && f.pagado_at.slice(3) === mesActual);
+
+    renderCajaHoy(ventasHoy, pedidosHoy, gastosHoy, prodHoy, fiadosHoy, hoy);
+    renderKPIs(ventasMes, pedidosMes, gastosMes, ventasHoy, pedidosHoy, fiadosHoy, fiadosMes);
+    renderDashboardChart(todasVentas, todosPedidos, fiadosCobrados);
   } catch { /* silencioso */ }
 }
 
-function renderCajaHoy(ventasHoy, pedidosHoy, gastosHoy, prodHoy, hoy) {
-  const card = document.getElementById("cajaCard");
+function renderCajaHoy(ventasHoy, pedidosHoy, gastosHoy, prodHoy, fiadosHoy, hoy) {
+  const card    = document.getElementById("cajaCard");
   const content = document.getElementById("cajaContent");
 
-  const ingV  = ventasHoy.reduce((s,v) => s + v.precio * v.cantidad, 0);
-  const ganV  = ventasHoy.reduce((s,v) => s + v.ganancia, 0);
-  const ingP  = pedidosHoy.reduce((s,p) => s + p.precio * p.cantidad, 0);
-  const ganP  = pedidosHoy.reduce((s,p) => s + p.ganancia, 0);
-  const totG  = gastosHoy.reduce((s,g) => s + g.monto, 0);
-  const neto  = ganV + ganP - totG;
-  const prodU = prodHoy.reduce((s,p) => s + p.cantidad, 0);
+  const ingV   = ventasHoy.reduce((s,v) => s + v.precio * v.cantidad, 0);
+  const ganV   = ventasHoy.reduce((s,v) => s + v.ganancia, 0);
+  const ingP   = pedidosHoy.reduce((s,p) => s + p.precio * p.cantidad, 0);
+  const ganP   = pedidosHoy.reduce((s,p) => s + p.ganancia, 0);
+  const ingF   = fiadosHoy.reduce((s,f) => s + f.monto, 0);
+  const totG   = gastosHoy.reduce((s,g) => s + g.monto, 0);
+  const neto   = ganV + ganP + ingF - totG;
+  const prodU  = prodHoy.reduce((s,p) => s + p.cantidad, 0);
 
   document.getElementById("cajaFecha").textContent = `Jornada de hoy — ${hoy}`;
 
   const fmt = n => "$" + n.toLocaleString("es-AR", {minimumFractionDigits:2, maximumFractionDigits:2});
   const col = n => n >= 0 ? "caja-val green" : "caja-val red";
 
+  const filaFiado = ingF > 0
+    ? `<div class="caja-row"><span class="caja-label">✅ Fiado cobrado (${fiadosHoy.length})</span><span class="caja-val green">${fmt(ingF)}</span></div>`
+    : "";
+
   content.innerHTML = `
     <div class="caja-row"><span class="caja-label">Ventas mostrador (${ventasHoy.length})</span><span class="${col(ganV)}">${fmt(ingV)} · gan. ${fmt(ganV)}</span></div>
     <div class="caja-row"><span class="caja-label">Pedidos clientes (${pedidosHoy.length})</span><span class="${col(ganP)}">${fmt(ingP)} · gan. ${fmt(ganP)}</span></div>
+    ${filaFiado}
     <div class="caja-row"><span class="caja-label">Gastos del día</span><span class="caja-val red">-${fmt(totG)}</span></div>
     <div class="caja-row"><span class="caja-label">Producción</span><span class="caja-val">${prodHoy.length} lote${prodHoy.length!==1?"s":""} · ${prodU} uds.</span></div>
     <div class="caja-total"><span>Resultado neto</span><span class="${neto>=0 ? "green" : "red"}">${fmt(neto)}</span></div>`;
@@ -4773,14 +4789,17 @@ function renderCajaHoy(ventasHoy, pedidosHoy, gastosHoy, prodHoy, hoy) {
   card.style.display = "block";
 }
 
-function renderKPIs(ventasMes, pedidosMes, gastosMes, ventasHoy, pedidosHoy) {
+function renderKPIs(ventasMes, pedidosMes, gastosMes, ventasHoy, pedidosHoy, fiadosHoy = [], fiadosMes = []) {
   const ingMes = ventasMes.reduce((s,v) => s + v.precio * v.cantidad, 0)
-               + pedidosMes.reduce((s,p) => s + p.precio * p.cantidad, 0);
+               + pedidosMes.reduce((s,p) => s + p.precio * p.cantidad, 0)
+               + fiadosMes.reduce((s,f) => s + f.monto, 0);
   const ganMes = ventasMes.reduce((s,v) => s + v.ganancia, 0)
-               + pedidosMes.reduce((s,p) => s + p.ganancia, 0);
+               + pedidosMes.reduce((s,p) => s + p.ganancia, 0)
+               + fiadosMes.reduce((s,f) => s + f.monto, 0);
   const gasMes = gastosMes.reduce((s,g) => s + g.monto, 0);
   const ingHoy = ventasHoy.reduce((s,v) => s + v.precio * v.cantidad, 0)
-               + pedidosHoy.reduce((s,p) => s + p.precio * p.cantidad, 0);
+               + pedidosHoy.reduce((s,p) => s + p.precio * p.cantidad, 0)
+               + fiadosHoy.reduce((s,f) => s + f.monto, 0);
   const fmt = n => "$" + Math.round(n).toLocaleString("es-AR");
   const el  = id => document.getElementById(id);
   if (el("kpiIngresosHoy"))  el("kpiIngresosHoy").textContent  = fmt(ingHoy);
@@ -4792,7 +4811,7 @@ function renderKPIs(ventasMes, pedidosMes, gastosMes, ventasHoy, pedidosHoy) {
   }
 }
 
-function renderDashboardChart(todasVentas, todosPedidos) {
+function renderDashboardChart(todasVentas, todosPedidos, fiadosCobrados = []) {
   const canvas = document.getElementById("dashWeeklyCanvas");
   const card   = document.getElementById("weeklyChartCard");
   if (!canvas || !card) return;
@@ -4814,6 +4833,14 @@ function renderDashboardChart(todasVentas, todosPedidos) {
   });
   sumar(todasVentas,  "created_at");
   sumar(todosPedidos, "created_at");
+  // Fiados: usar pagado_at como fecha, monto como ingreso
+  fiadosCobrados.forEach(f => {
+    const parts = (f.pagado_at || "").split("/");
+    if (parts.length >= 2) {
+      const lbl = parts[0] + "/" + parts[1];
+      if (byDay[lbl] !== undefined) byDay[lbl] += f.monto;
+    }
+  });
 
   const data = dias.map(d => byDay[d]);
   const hay  = data.some(v => v > 0);
@@ -5226,17 +5253,25 @@ function setPeriodo(dias, btn) {
 
 async function cargarReportes() {
   try {
-    const [rV, rP] = await Promise.all([
+    const [rV, rP, rF] = await Promise.all([
       fetch(`${API}/api/ventas`,  { headers: authHeaders() }),
-      fetch(`${API}/api/pedidos`, { headers: authHeaders() })
+      fetch(`${API}/api/pedidos`, { headers: authHeaders() }),
+      fetch(`${API}/api/fiado`,   { headers: authHeaders() }),
     ]);
     if (rV.status===401) { handleUnauthorized(); return; }
     const vData = rV.ok ? await rV.json() : [];
     const pData = rP.ok ? await rP.json() : [];
-    // Unificar: ventas y pedidos como transacciones
+    const fData = (rF.ok ? await rF.json() : []).filter(f => f.pagado && f.pagado_at);
+    // Unificar: ventas + pedidos + fiados cobrados como transacciones
     pedidosTodos = [
       ...vData.map(v => ({ ...v, tipo: "venta",  nombre: v.nombre })),
-      ...pData.map(p => ({ ...p, tipo: "pedido", nombre: p.product_nombre }))
+      ...pData.map(p => ({ ...p, tipo: "pedido", nombre: p.product_nombre })),
+      // Fiado: precio=monto, cantidad=1, ganancia=monto, created_at=pagado_at
+      ...fData.map(f => ({
+        ...f, tipo: "fiado", nombre: `Fiado: ${f.concepto}`,
+        precio: f.monto, cantidad: 1, ganancia: f.monto,
+        created_at: f.pagado_at + " 00:00",
+      })),
     ];
     _loaded.reportes = true;
     renderReportes();
