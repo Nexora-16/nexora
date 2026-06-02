@@ -117,11 +117,14 @@ def ventas_caja_hoy():
 @sales_bp.route("/cierre-dia", methods=["GET"])
 @require_auth
 def cierre_dia():
-    from models.gasto import Gasto
+    from models.gasto  import Gasto
+    from models.fiado  import Fiado
+    from models.pedido import Pedido
     from services.ia_service import resumen_dia_ia
 
     hoy_inicio = datetime.combine(date.today(), datetime.min.time())
 
+    # ── Ventas mostrador (cobro rápido) ──────────────────────────────────
     ventas_caja = (scoped_query(Sale)
                    .filter(Sale.nombre.like("caja:%"))
                    .filter(Sale.created_at >= hoy_inicio)
@@ -139,24 +142,45 @@ def cierre_dia():
         metodo = v.nombre.replace("caja:", "")
         por_metodo[metodo] = por_metodo.get(metodo, 0) + v.precio
 
-    total_productos  = sum(v.precio * v.cantidad for v in ventas_productos)
-    ganancia_prods   = sum((v.precio - v.costo) * v.cantidad for v in ventas_productos)
+    total_productos = sum(v.precio * v.cantidad for v in ventas_productos)
+    ganancia_prods  = sum((v.precio - v.costo) * v.cantidad for v in ventas_productos)
 
-    gastos_hoy   = []
+    # ── Fiados cobrados hoy ──────────────────────────────────────────────
+    fiados_cobrados = (scoped_query(Fiado)
+                       .filter(Fiado.pagado == True)
+                       .filter(Fiado.pagado_at >= hoy_inicio)
+                       .all())
+    total_fiados = sum(f.monto for f in fiados_cobrados)
+
+    # ── Pedidos de clientes creados hoy ─────────────────────────────────
+    pedidos_hoy = (scoped_query(Pedido)
+                   .filter(Pedido.created_at >= hoy_inicio)
+                   .all())
+    total_pedidos   = sum(p.precio * p.cantidad for p in pedidos_hoy)
+    ganancia_pedidos = sum((p.precio - p.costo) * p.cantidad for p in pedidos_hoy)
+
+    # ── Gastos ───────────────────────────────────────────────────────────
+    gastos_hoy = []
     if getattr(g, "role", "admin") == "admin":
         gastos_hoy = Gasto.query.filter_by(user_id=g.owner_id).filter(
             Gasto.fecha == date.today()
         ).all()
     total_gastos = sum(gs.monto for gs in gastos_hoy)
 
+    total_ingresos = total_caja + total_productos + total_fiados + total_pedidos
+
     stats = {
-        "total_caja":        round(total_caja, 2),
-        "total_productos":   round(total_productos, 2),
-        "total_ventas":      round(total_caja + total_productos, 2),
-        "ganancia_neta":     round(ganancia_prods - total_gastos, 2),
-        "total_gastos":      round(total_gastos, 2),
-        "por_metodo":        {k: round(v, 2) for k, v in por_metodo.items()},
-        "cant_operaciones":  len(ventas_caja) + len(ventas_productos),
+        "total_caja":           round(total_caja, 2),
+        "total_productos":      round(total_productos, 2),
+        "total_fiados":         round(total_fiados, 2),
+        "total_pedidos":        round(total_pedidos, 2),
+        "total_ventas":         round(total_ingresos, 2),
+        "ganancia_neta":        round(ganancia_prods + ganancia_pedidos - total_gastos, 2),
+        "total_gastos":         round(total_gastos, 2),
+        "por_metodo":           {k: round(v, 2) for k, v in por_metodo.items()},
+        "cant_operaciones":     len(ventas_caja) + len(ventas_productos) + len(fiados_cobrados) + len(pedidos_hoy),
+        "cant_fiados_cobrados": len(fiados_cobrados),
+        "cant_pedidos":         len(pedidos_hoy),
     }
 
     resumen = resumen_dia_ia(stats)

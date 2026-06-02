@@ -5972,29 +5972,53 @@ async function abrirCierreDia() {
         <div class="cierre-stat-lbl">Operaciones</div>
       </div>
       <div class="cierre-stat">
-        <div class="cierre-stat-val">${fmt(s.total_caja)}</div>
-        <div class="cierre-stat-lbl">Caja libre</div>
-      </div>
-      <div class="cierre-stat">
         <div class="cierre-stat-val">${fmt(s.ganancia_neta)}</div>
         <div class="cierre-stat-lbl">Ganancia est.</div>
+      </div>
+      <div class="cierre-stat">
+        <div class="cierre-stat-val">${fmt(s.total_gastos)}</div>
+        <div class="cierre-stat-lbl">Gastos</div>
       </div>`;
 
     const metodos = s.por_metodo || {};
     const mkeys   = Object.keys(metodos);
     const iconM   = { efectivo:"💵", transferencia:"📱", tarjeta:"💳" };
     const labelM  = { efectivo:"Efectivo", transferencia:"Transferencia", tarjeta:"Tarjeta" };
+
+    const el = document.getElementById("cierreMetodos");
+    el.style.display = "block";
+    let desglose = `<div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#fcd34d;opacity:0.55;margin-bottom:10px;">Desglose de ingresos</div>`;
+
+    // Mostrador (caja rápida por método)
     if (mkeys.length) {
-      const el = document.getElementById("cierreMetodos");
-      el.style.display = "block";
-      el.innerHTML =
-        `<div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#fcd34d;opacity:0.55;margin-bottom:10px;">Por método</div>` +
-        mkeys.map(k => `
-          <div class="cierre-metodo-row">
-            <span>${iconM[k] || ""} ${labelM[k] || k}</span>
-            <span style="font-weight:700;color:#fbbf24;">${fmt(metodos[k])}</span>
-          </div>`).join("");
+      desglose += mkeys.map(k => `
+        <div class="cierre-metodo-row">
+          <span>${iconM[k] || "💵"} ${labelM[k] || k}</span>
+          <span style="font-weight:700;color:#fbbf24;">${fmt(metodos[k])}</span>
+        </div>`).join("");
     }
+    // Ventas de productos
+    if (s.total_productos > 0) {
+      desglose += `<div class="cierre-metodo-row">
+        <span>🧾 Ventas de productos</span>
+        <span style="font-weight:700;color:#fbbf24;">${fmt(s.total_productos)}</span>
+      </div>`;
+    }
+    // Pedidos de clientes
+    if (s.total_pedidos > 0) {
+      desglose += `<div class="cierre-metodo-row">
+        <span>📦 Pedidos de clientes (${s.cant_pedidos})</span>
+        <span style="font-weight:700;color:#fbbf24;">${fmt(s.total_pedidos)}</span>
+      </div>`;
+    }
+    // Fiados cobrados
+    if (s.total_fiados > 0) {
+      desglose += `<div class="cierre-metodo-row" style="border-top:1px solid rgba(74,222,128,0.2);margin-top:6px;padding-top:6px;">
+        <span>✅ Fiado cobrado (${s.cant_fiados_cobrados})</span>
+        <span style="font-weight:700;color:#4ade80;">${fmt(s.total_fiados)}</span>
+      </div>`;
+    }
+    el.innerHTML = desglose;
 
     _cierreData = data;
     document.getElementById("cierreIaText").textContent = data.resumen || "—";
@@ -6010,9 +6034,11 @@ function compartirCierre() {
   const fmt  = n => "$" + (n || 0).toLocaleString("es-AR");
   const hoy  = new Date().toLocaleDateString("es-AR", { weekday:"long", day:"numeric", month:"long" });
   const iconM = { efectivo:"💵", transferencia:"📱", tarjeta:"💳" };
-  const metodos = Object.entries(s.por_metodo || {})
-    .map(([k, v]) => `  ${iconM[k] || "💰"} ${k.charAt(0).toUpperCase()+k.slice(1)}: ${fmt(v)}`)
-    .join("\n");
+  const metodos = [
+    ...Object.entries(s.por_metodo || {}).map(([k, v]) => `  ${iconM[k] || "💰"} ${k.charAt(0).toUpperCase()+k.slice(1)}: ${fmt(v)}`),
+    s.total_pedidos > 0 ? `  📦 Pedidos de clientes: ${fmt(s.total_pedidos)}` : "",
+    s.total_fiados  > 0 ? `  ✅ Fiado cobrado: ${fmt(s.total_fiados)}`        : "",
+  ].filter(Boolean).join("\n");
   const texto = [
     `☀️ *Cierre del día — ${hoy}*`,
     ``,
