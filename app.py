@@ -212,6 +212,10 @@ def service_worker():
 def icon():
     return send_file("nexora-icon.svg", mimetype="image/svg+xml")
 
+@app.route("/nexora-logo.svg")
+def logo():
+    return send_file("nexora-logo.svg", mimetype="image/svg+xml")
+
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)

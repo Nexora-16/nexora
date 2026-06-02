@@ -1,11 +1,21 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="80" fill="#020617"/>
-  <circle cx="256" cy="256" r="220" fill="rgba(5,46,22,0.92)" stroke="#22c55e" stroke-width="5"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
   <defs>
-    <linearGradient id="ng" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#4ade80"/>
-      <stop offset="100%" stop-color="#14532d"/>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#D4AF37"/>
+      <stop offset="50%" stop-color="#F9E076"/>
+      <stop offset="100%" stop-color="#B8860B"/>
     </linearGradient>
   </defs>
-  <text x="256" y="348" text-anchor="middle" font-family="'Segoe UI',Arial,sans-serif" font-weight="900" font-size="272" fill="url(#ng)">N</text>
+  <rect width="100" height="100" fill="#0a0403" rx="18"/>
+  <g transform="translate(50,50) scale(0.62) translate(-40,-70)">
+    <path d="M 40,140 Q 45,80 40,20" fill="none" stroke="url(#g)" stroke-width="4" stroke-linecap="round"/>
+    <path d="M 40,110 Q 15,100 38,85 Z" fill="url(#g)"/>
+    <path d="M 40,85 Q 15,75 38,60 Z" fill="url(#g)"/>
+    <path d="M 40,60 Q 15,50 38,35 Z" fill="url(#g)"/>
+    <path d="M 40,35 Q 25,25 40,10 Z" fill="url(#g)"/>
+    <path d="M 42,120 Q 67,110 44,95 Z" fill="url(#g)"/>
+    <path d="M 42,95 Q 67,85 44,70 Z" fill="url(#g)"/>
+    <path d="M 42,70 Q 67,60 44,45 Z" fill="url(#g)"/>
+    <path d="M 42,45 Q 57,35 42,20 Z" fill="url(#g)"/>
+  </g>
 </svg>
