@@ -917,6 +917,31 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
 .fiado-group-saldo.cero { color: #4ade80; }
 .fiado-group-body   { padding: 6px 10px 10px; }
 
+/* ── Tabla calendario clientes ── */
+.cal-table { border-collapse: collapse; min-width: 100%; font-size: 12px; }
+.cal-table th, .cal-table td {
+  border: 1px solid rgba(245,158,11,0.12);
+  padding: 7px 10px;
+  white-space: nowrap;
+  vertical-align: top;
+}
+.cal-table thead th {
+  background: rgba(20,8,0,0.9);
+  color: #fcd34d;
+  text-align: center;
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.3px;
+  position: sticky; top: 0;
+}
+.cal-table thead th:first-child { text-align: left; min-width: 130px; }
+.cal-table tbody tr:nth-child(odd)  td { background: rgba(20,8,0,0.5); }
+.cal-table tbody tr:nth-child(even) td { background: rgba(10,4,0,0.4); }
+.cal-table tbody td:first-child { color: #fbbf24; font-weight: 600; position: sticky; left: 0; background: rgba(20,8,0,0.95); z-index: 1; min-width: 130px; }
+.cal-cell-pedido { color: #fef3c7; line-height: 1.5; }
+.cal-cell-fiado  { color: #f87171; font-size: 11px; margin-top: 2px; }
+.cal-cell-fiado.pagado { color: #4ade80; text-decoration: line-through; opacity: 0.7; }
+
 .precio-chip {
   background: rgba(245,158,11,0.12);
   border: 1px solid rgba(245,158,11,0.3);
@@ -2470,6 +2495,22 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
       </div>
     </div>
     <div id="clientesList"></div>
+
+    <!-- ── Calendario de pedidos ─────────────────────────── -->
+    <div class="card" id="calendarioCard" style="display:none;">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
+        <h3 style="margin:0;">Historial de pedidos</h3>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+          <div class="periodo-tabs" style="margin:0;">
+            <button class="periodo-tab active" onclick="setCalPeriodo(7,this)">7 días</button>
+            <button class="periodo-tab"        onclick="setCalPeriodo(14,this)">14 días</button>
+            <button class="periodo-tab"        onclick="setCalPeriodo(30,this)">30 días</button>
+          </div>
+          <button class="btn-cierre-hdr" onclick="descargarExcelClientes()" id="btnExcelClientes" style="white-space:nowrap;">↓ Excel</button>
+        </div>
+      </div>
+      <div id="calendarioTabla" style="overflow-x:auto;"></div>
+    </div>
   </div>
 </div>
 
@@ -3019,6 +3060,7 @@ let reporteChart       = null;
 let reportePeriodo     = 7;
 let fiadoTodos         = [];
 let fiadoClienteActual = null;
+let pedidosCalendario  = [];
 let _cierreData        = null;
 let compras            = [];
 let ventasFiltro       = 'todo';
@@ -3158,8 +3200,12 @@ function navTo(pantalla) {
       if (_loaded.gastos) renderGastos(); else cargarGastos();
       break;
     case "clientes":
-      if (_loaded.clientes) renderClientes();
-      else { cargarFiados(); cargarClientes(); }
+      if (_loaded.clientes) { renderClientes(); }
+      else { cargarClientes(); }
+      Promise.all([
+        _loaded.fiados    ? Promise.resolve() : cargarFiados(),
+        cargarPedidosCalendario()
+      ]).then(() => renderCalendarioClientes());
       if (!_loaded.productos) cargarProductos();
       break;
     case "fiado":
@@ -4812,6 +4858,14 @@ function tipoBadgeClass(tipo) {
   return "";
 }
 
+async function cargarPedidosCalendario() {
+  try {
+    const res = await fetch(`${API}/api/pedidos`, { headers: authHeaders() });
+    if (res.status === 401) { handleUnauthorized(); return; }
+    pedidosCalendario = res.ok ? await res.json() : [];
+  } catch { pedidosCalendario = []; }
+}
+
 async function cargarClientes() {
   try {
     const res = await fetch(`${API}/api/clientes`, { headers: authHeaders() });
@@ -4820,6 +4874,99 @@ async function cargarClientes() {
     _loaded.clientes = true;
     renderClientes();
   } catch { /* silencioso */ }
+}
+
+let _calPeriodo = 7;
+function setCalPeriodo(dias, btn) {
+  _calPeriodo = dias;
+  btn.closest(".periodo-tabs").querySelectorAll(".periodo-tab").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  renderCalendarioClientes();
+}
+
+function renderCalendarioClientes() {
+  const card = document.getElementById("calendarioCard");
+  const wrap = document.getElementById("calendarioTabla");
+
+  // Unificar pedidos + fiados
+  const DIAS = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
+  const ahora  = new Date();
+  const fechas = [];
+  for (let i = _calPeriodo - 1; i >= 0; i--) {
+    const d = new Date(ahora);
+    d.setDate(d.getDate() - i);
+    d.setHours(0,0,0,0);
+    fechas.push(d);
+  }
+  const fmtKey = d => d.toISOString().slice(0,10); // YYYY-MM-DD
+
+  // Agrupar por cliente → fecha → filas
+  const data = {}; // data[cliente][fechaKey] = { pedidos:[], fiados:[] }
+
+  // Parsear pedidos
+  const parseFecha = str => {
+    const [f] = (str||"").split(" ");
+    const [d,m,y] = f.split("/");
+    const dt = new Date(+y, +m-1, +d);
+    dt.setHours(0,0,0,0);
+    return dt;
+  };
+
+  pedidosCalendario.forEach(p => {
+    const nombre = p.client_nombre || "—";
+    const fd = parseFecha(p.created_at);
+    const key = fmtKey(fd);
+    if (!data[nombre]) data[nombre] = {};
+    if (!data[nombre][key]) data[nombre][key] = { pedidos: [], fiados: [] };
+    const cant = p.cantidad % 1 === 0 ? Math.round(p.cantidad) : p.cantidad;
+    data[nombre][key].pedidos.push(`${p.product_nombre} ×${cant}`);
+  });
+
+  // Parsear fiados
+  fiadoTodos.forEach(f => {
+    const nombre = f.client_nombre || "—";
+    const fd = parseFecha(f.created_at);
+    const key = fmtKey(fd);
+    if (!data[nombre]) data[nombre] = {};
+    if (!data[nombre][key]) data[nombre][key] = { pedidos: [], fiados: [] };
+    data[nombre][key].fiados.push({ concepto: f.concepto, monto: f.monto, pagado: f.pagado });
+  });
+
+  const nombresClientes = Object.keys(data).sort();
+  if (nombresClientes.length === 0) { card.style.display = "none"; return; }
+  card.style.display = "";
+
+  const fmt$ = n => "$" + n.toLocaleString("es-AR", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+
+  let html = `<table class="cal-table"><thead><tr><th>Cliente</th>`;
+  fechas.forEach(d => {
+    html += `<th>${DIAS[d.getDay()]}<br><span style="font-weight:400;opacity:0.7;">${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}</span></th>`;
+  });
+  html += `</tr></thead><tbody>`;
+
+  nombresClientes.forEach(nombre => {
+    html += `<tr><td>${escHtml(nombre)}</td>`;
+    fechas.forEach(d => {
+      const key   = fmtKey(d);
+      const celda = (data[nombre] || {})[key];
+      if (!celda || (celda.pedidos.length === 0 && celda.fiados.length === 0)) {
+        html += `<td></td>`;
+        return;
+      }
+      let contenido = "";
+      if (celda.pedidos.length) {
+        contenido += `<div class="cal-cell-pedido">${celda.pedidos.map(p => escHtml(p)).join("<br>")}</div>`;
+      }
+      celda.fiados.forEach(f => {
+        contenido += `<div class="cal-cell-fiado${f.pagado ? " pagado" : ""}">💳 ${escHtml(f.concepto)} ${fmt$(f.monto)}${f.pagado ? " ✓" : ""}</div>`;
+      });
+      html += `<td>${contenido}</td>`;
+    });
+    html += `</tr>`;
+  });
+
+  html += `</tbody></table>`;
+  wrap.innerHTML = html;
 }
 
 function renderClientes() {

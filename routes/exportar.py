@@ -11,6 +11,7 @@ from openpyxl.utils import get_column_letter
 
 from models.pedido import Pedido
 from models.client import Client
+from models.fiado import Fiado
 from utils.auth_utils import require_auth, scoped_query
 
 exportar_bp = Blueprint("exportar", __name__)
@@ -46,18 +47,24 @@ def exportar_excel():
     owner_id = g.owner_id
 
     # ── Datos ──────────────────────────────────────────────────────────────
-    pedidos = scoped_query(Pedido).order_by(Pedido.created_at.asc()).all()
+    pedidos     = scoped_query(Pedido).order_by(Pedido.created_at.asc()).all()
+    fiados      = scoped_query(Fiado).order_by(Fiado.created_at.asc()).all()
     clientes_db = scoped_query(Client).order_by(Client.nombre.asc()).all()
 
-    # Parsear fechas y agrupar
-    # estructura: data[client_nombre][fecha_date] = [(producto, cantidad, precio)]
-    data = defaultdict(lambda: defaultdict(list))
+    # estructura: data[client_nombre][fecha_date] = {pedidos:[], fiados:[]}
+    data = defaultdict(lambda: defaultdict(lambda: {"pedidos": [], "fiados": []}))
     todas_fechas = set()
 
     for p in pedidos:
         fecha_date = p.created_at.date()
-        data[p.client_nombre][fecha_date].append(
-            (p.product_nombre, p.cantidad, p.precio)
+        cant = int(p.cantidad) if p.cantidad == int(p.cantidad) else p.cantidad
+        data[p.client_nombre][fecha_date]["pedidos"].append((p.product_nombre, cant, p.precio))
+        todas_fechas.add(fecha_date)
+
+    for f in fiados:
+        fecha_date = f.created_at.date()
+        data[f.client_nombre][fecha_date]["fiados"].append(
+            (f.concepto, f.monto, f.pagado, f.pagado_at)
         )
         todas_fechas.add(fecha_date)
 
@@ -108,13 +115,15 @@ def exportar_excel():
 
         total_row = 0
         for col_idx, fecha in enumerate(fechas_ordenadas, start=2):
-            items = data[nombre].get(fecha, [])
-            if items:
+            celda = data[nombre].get(fecha, None)
+            if celda:
                 lineas = []
-                for prod, cant, precio in items:
-                    cant_str = int(cant) if cant == int(cant) else cant
-                    lineas.append(f"{prod}  ×{cant_str}")
+                for prod, cant, precio in celda["pedidos"]:
+                    lineas.append(f"{prod}  ×{cant}")
                     total_row += precio * cant
+                for concepto, monto, pagado, pagado_at in celda["fiados"]:
+                    estado = f"[PAGADO {pagado_at.strftime('%d/%m') if pagado_at else ''}]" if pagado else "[DEBE]"
+                    lineas.append(f"💳 {concepto}  ${monto:,.0f} {estado}")
                 texto = "\n".join(lineas)
             else:
                 texto = ""
@@ -137,8 +146,8 @@ def exportar_excel():
     ws2.sheet_view.showGridLines = False
     ws2.freeze_panes = "A2"
 
-    headers = ["Fecha", "Día", "Cliente", "Producto", "Cantidad", "Precio unit.", "Total"]
-    col_widths = [12, 8, 24, 24, 10, 14, 14]
+    headers = ["Fecha", "Día", "Cliente", "Concepto / Producto", "Cantidad", "Monto / Precio", "Total", "Tipo", "Estado"]
+    col_widths = [12, 8, 24, 28, 10, 14, 14, 10, 12]
     for col_idx, (h, w) in enumerate(zip(headers, col_widths), start=1):
         c = ws2.cell(1, col_idx, h)
         c.font      = _hdr_font()
@@ -148,26 +157,41 @@ def exportar_excel():
         ws2.column_dimensions[get_column_letter(col_idx)].width = w
     ws2.row_dimensions[1].height = 22
 
-    pedidos_desc = sorted(pedidos, key=lambda p: p.created_at, reverse=True)
-    for row_idx, p in enumerate(pedidos_desc, start=2):
+    # Combinar pedidos y fiados ordenados por fecha desc
+    fiado_red  = Font(color="FFEF4444", size=9)
+    fiado_green = Font(color="FF4ADE80", size=9)
+
+    filas = []
+    for p in pedidos:
+        cant  = int(p.cantidad) if p.cantidad == int(p.cantidad) else p.cantidad
+        total = p.precio * p.cantidad
+        filas.append({
+            "fecha":  p.created_at,
+            "data":   [p.created_at.strftime("%d/%m/%Y"), DIAS[p.created_at.weekday()],
+                       p.client_nombre, p.product_nombre, cant, p.precio, round(total,2), "Pedido", "—"],
+            "tipo":   "pedido",
+        })
+    for f in fiados:
+        pagado_str = f"Pagado {f.pagado_at.strftime('%d/%m/%Y')}" if f.pagado and f.pagado_at else ("Pagado" if f.pagado else "Pendiente")
+        filas.append({
+            "fecha":  f.created_at,
+            "data":   [f.created_at.strftime("%d/%m/%Y"), DIAS[f.created_at.weekday()],
+                       f.client_nombre, f.concepto, "—", f.monto, f.monto, "Fiado", pagado_str],
+            "tipo":   "fiado",
+            "pagado": f.pagado,
+        })
+    filas.sort(key=lambda x: x["fecha"], reverse=True)
+
+    for row_idx, fila in enumerate(filas, start=2):
         fill = _odd_fill() if row_idx % 2 == 0 else _evn_fill()
-        cant     = int(p.cantidad) if p.cantidad == int(p.cantidad) else p.cantidad
-        total    = p.precio * p.cantidad
-        dia_str  = DIAS[p.created_at.weekday()]
-        row_data = [
-            p.created_at.strftime("%d/%m/%Y"),
-            dia_str,
-            p.client_nombre,
-            p.product_nombre,
-            cant,
-            p.precio,
-            round(total, 2),
-        ]
-        for col_idx, val in enumerate(row_data, start=1):
+        for col_idx, val in enumerate(fila["data"], start=1):
             c = ws2.cell(row_idx, col_idx, val)
-            c.font      = _body_font()
+            if fila["tipo"] == "fiado":
+                c.font = fiado_green if fila.get("pagado") else fiado_red
+            else:
+                c.font = _body_font()
             c.fill      = fill
-            c.alignment = _center() if col_idx != 3 else _left()
+            c.alignment = _center() if col_idx not in (3, 4) else _left()
             c.border    = _border()
             if col_idx in (6, 7):
                 c.number_format = '"$"#,##0.00'
