@@ -2433,7 +2433,12 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
 <!-- ═══════════════ CLIENTES ═══════════════ -->
 <div id="clientes" class="screen">
   <div class="app-screen" style="max-width:900px;">
-    <h2>Clientes</h2>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+      <h2 style="margin:0;">Clientes</h2>
+      <button class="btn-cierre-hdr" onclick="descargarExcelClientes()" id="btnExcelClientes">
+        📊 Exportar Excel
+      </button>
+    </div>
 
     <!-- Formulario -->
     <div class="card">
@@ -5748,6 +5753,26 @@ document.addEventListener("keydown", function(e) {
   else if (e.key === "Enter" || e.key === "+") { e.preventDefault(); add(); }
   else if (e.key === "Escape")                 { e.preventDefault(); clr(); }
 });
+
+async function descargarExcelClientes() {
+  const btn = document.getElementById("btnExcelClientes");
+  const orig = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "Generando…";
+  try {
+    const res = await fetch(`${API}/api/clientes/exportar-excel`, { headers: authHeaders() });
+    if (res.status === 401) { handleUnauthorized(); return; }
+    if (!res.ok) { alert("No hay pedidos para exportar aún."); return; }
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href     = url;
+    a.download = `nexora_clientes_${new Date().toISOString().slice(0,10)}.xlsx`;
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch { alert("Error al generar el Excel."); }
+  finally  { btn.disabled = false; btn.textContent = orig; }
+}
 
 function exportarCSV() {
   const ahora = new Date();

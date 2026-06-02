@@ -6,3 +6,4 @@ werkzeug
 psycopg2-binary
 requests
 duckduckgo-search
+openpyxl

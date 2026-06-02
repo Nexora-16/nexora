@@ -65,6 +65,7 @@ gastos_bp      = _safe_import("routes.gastos",       "gastos_bp")
 fiado_bp       = _safe_import("routes.fiado",        "fiado_bp")
 sucursales_bp  = _safe_import("routes.sucursales",   "sucursales_bp")
 exchange_bp    = _safe_import("routes.auth_supabase","exchange_bp")
+exportar_bp    = _safe_import("routes.exportar",      "exportar_bp")
 
 app.register_blueprint(auth_bp,       url_prefix="/api")
 app.register_blueprint(business_bp,   url_prefix="/api")
@@ -80,6 +81,7 @@ app.register_blueprint(gastos_bp,     url_prefix="/api")
 app.register_blueprint(fiado_bp,      url_prefix="/api")
 app.register_blueprint(sucursales_bp, url_prefix="/api")
 app.register_blueprint(exchange_bp,   url_prefix="/api")
+app.register_blueprint(exportar_bp,   url_prefix="/api")
 
 try:
     with app.app_context():
