@@ -3067,7 +3067,35 @@ let ventasFiltro       = 'todo';
 let ventasPagina       = 1;
 const VENTAS_PAGE      = 40;
 const _loaded = {};
-function invalidate(...sections) { sections.forEach(s => delete _loaded[s]); }
+function invalidate(...sections) {
+  sections.forEach(s => delete _loaded[s]);
+  // Invalidar caché de transacciones cuando cambian ventas/pedidos/fiados
+  if (sections.some(s => ["ventas","pedidos","reportes","fiados"].includes(s))) {
+    _txTs = 0;
+  }
+}
+
+// ── Caché compartida de ventas+pedidos+fiados ─────────────────────────────────
+let _txPromise = null;
+let _txTs      = 0;
+
+async function _cargarTx() {
+  const now = Date.now();
+  if (_txPromise && now - _txTs < 8000) return _txPromise;
+  _txTs = now;
+  _txPromise = Promise.all([
+    fetch(`${API}/api/ventas`,  { headers: authHeaders() }).then(r => r.ok ? r.json() : []).catch(() => []),
+    fetch(`${API}/api/pedidos`, { headers: authHeaders() }).then(r => r.ok ? r.json() : []).catch(() => []),
+    fetch(`${API}/api/fiado`,   { headers: authHeaders() }).then(r => r.ok ? r.json() : []).catch(() => []),
+  ]).then(([ventas, pedidos, fiados]) => ({ ventas, pedidos, fiados }));
+  return _txPromise;
+}
+
+// ── Helper: compara si una fecha-string pertenece al mismo mes ────────────────
+// dateStr = "dd/mm/yyyy" o "dd/mm/yyyy HH:MM" | mesRef = "mm/yyyy"
+function _esMismoMes(dateStr, mesRef) {
+  return dateStr ? dateStr.slice(3, 10) === mesRef : false;
+}
 
 const API = "";
 
@@ -4722,33 +4750,28 @@ function hoyStr() {
 
 async function cargarCajaHoy() {
   try {
-    const [rV, rP, rG, rProd, rF] = await Promise.all([
-      fetch(`${API}/api/ventas`,    { headers: authHeaders() }),
-      fetch(`${API}/api/pedidos`,   { headers: authHeaders() }),
+    const [{ ventas: todasVentas, pedidos: todosPedidos, fiados: todosFiados }, rG, rProd] = await Promise.all([
+      _cargarTx(),
       fetch(`${API}/api/gastos`,    { headers: authHeaders() }),
       fetch(`${API}/api/produccion`,{ headers: authHeaders() }),
-      fetch(`${API}/api/fiado`,     { headers: authHeaders() }),
     ]);
-    const hoy          = hoyStr();
-    const mesActual    = hoy.slice(3); // "MM/YYYY"
-    const todasVentas  = rV.ok  ? await rV.json()    : [];
-    const todosPedidos = rP.ok  ? await rP.json()    : [];
-    const todosGastos  = rG.ok  ? await rG.json()    : [];
-    const todosFiados  = rF.ok  ? await rF.json()    : [];
+    if (!todasVentas) return;
 
-    // Solo fiados cobrados (pagado=true, usar pagado_at como fecha)
+    const hoy            = hoyStr();
+    const mesActual      = hoy.slice(3);
     const fiadosCobrados = todosFiados.filter(f => f.pagado && f.pagado_at);
+    const todosGastos    = rG.ok ? await rG.json() : [];
+    const prodHoy        = (rProd.ok ? await rProd.json() : []).filter(p => p.created_at.startsWith(hoy));
 
-    const ventasHoy    = todasVentas.filter(v  => v.created_at.startsWith(hoy));
-    const pedidosHoy   = todosPedidos.filter(p => p.created_at.startsWith(hoy));
-    const gastosHoy    = todosGastos.filter(g  => g.fecha === hoy);
-    const fiadosHoy    = fiadosCobrados.filter(f => f.pagado_at === hoy);
-    const prodHoy      = (rProd.ok ? await rProd.json() : []).filter(p => p.created_at.startsWith(hoy));
+    const ventasHoy  = todasVentas.filter(v => v.created_at.startsWith(hoy));
+    const pedidosHoy = todosPedidos.filter(p => p.created_at.startsWith(hoy));
+    const gastosHoy  = todosGastos.filter(g  => g.fecha === hoy);
+    const fiadosHoy  = fiadosCobrados.filter(f => f.pagado_at === hoy);
 
-    const ventasMes    = todasVentas.filter(v  => v.created_at.slice(3,10) === mesActual || v.created_at.slice(3) === mesActual);
-    const pedidosMes   = todosPedidos.filter(p => p.created_at.slice(3,10) === mesActual || p.created_at.slice(3) === mesActual);
-    const gastosMes    = todosGastos.filter(g  => g.fecha.slice(3) === mesActual);
-    const fiadosMes    = fiadosCobrados.filter(f => f.pagado_at && f.pagado_at.slice(3) === mesActual);
+    const ventasMes  = todasVentas.filter(v  => _esMismoMes(v.created_at, mesActual));
+    const pedidosMes = todosPedidos.filter(p  => _esMismoMes(p.created_at, mesActual));
+    const gastosMes  = todosGastos.filter(g   => _esMismoMes(g.fecha, mesActual));
+    const fiadosMes  = fiadosCobrados.filter(f => _esMismoMes(f.pagado_at, mesActual));
 
     renderCajaHoy(ventasHoy, pedidosHoy, gastosHoy, prodHoy, fiadosHoy, hoy);
     renderKPIs(ventasMes, pedidosMes, gastosMes, ventasHoy, pedidosHoy, fiadosHoy, fiadosMes);
@@ -5253,20 +5276,11 @@ function setPeriodo(dias, btn) {
 
 async function cargarReportes() {
   try {
-    const [rV, rP, rF] = await Promise.all([
-      fetch(`${API}/api/ventas`,  { headers: authHeaders() }),
-      fetch(`${API}/api/pedidos`, { headers: authHeaders() }),
-      fetch(`${API}/api/fiado`,   { headers: authHeaders() }),
-    ]);
-    if (rV.status===401) { handleUnauthorized(); return; }
-    const vData = rV.ok ? await rV.json() : [];
-    const pData = rP.ok ? await rP.json() : [];
-    const fData = (rF.ok ? await rF.json() : []).filter(f => f.pagado && f.pagado_at);
-    // Unificar: ventas + pedidos + fiados cobrados como transacciones
+    const { ventas: vData, pedidos: pData, fiados: fRaw } = await _cargarTx();
+    const fData = fRaw.filter(f => f.pagado && f.pagado_at);
     pedidosTodos = [
       ...vData.map(v => ({ ...v, tipo: "venta",  nombre: v.nombre })),
       ...pData.map(p => ({ ...p, tipo: "pedido", nombre: p.product_nombre })),
-      // Fiado: precio=monto, cantidad=1, ganancia=monto, created_at=pagado_at
       ...fData.map(f => ({
         ...f, tipo: "fiado", nombre: `Fiado: ${f.concepto}`,
         precio: f.monto, cantidad: 1, ganancia: f.monto,
@@ -5641,50 +5655,6 @@ async function calcularPuntoEquilibrio() {
 }
 
 
-// ─── SUGERENCIAS DE PRODUCCIÓN ───────────────────────────────────────────────
-
-async function cargarSugerencias() {
-  try {
-    const [rV, rP] = await Promise.all([
-      fetch(`${API}/api/ventas`,  { headers: authHeaders() }),
-      fetch(`${API}/api/pedidos`, { headers: authHeaders() })
-    ]);
-    const vData = rV.ok ? await rV.json() : [];
-    const pData = rP.ok ? await rP.json() : [];
-
-    const ahora  = new Date();
-    const cutoff = new Date(ahora); cutoff.setDate(ahora.getDate() - 7);
-
-    const txRecientes = [
-      ...vData.map(v => ({ nombre: v.nombre, cantidad: v.cantidad, fecha: v.created_at })),
-      ...pData.map(p => ({ nombre: p.product_nombre, cantidad: p.cantidad, fecha: p.created_at }))
-    ].filter(t => parseDate(t.fecha) >= cutoff);
-
-    if (txRecientes.length === 0) return;
-
-    const byProd = {};
-    txRecientes.forEach(t => {
-      byProd[t.nombre] = (byProd[t.nombre] || 0) + t.cantidad;
-    });
-
-    const dias = Math.max(1, Math.round((ahora - cutoff) / 86400000));
-    const sugerencias = Object.entries(byProd)
-      .map(([nom, total]) => ({ nombre: nom, avg: total / dias, sugerido: Math.ceil((total / dias) * 1.3) }))
-      .sort((a, b) => b.avg - a.avg);
-
-    const card    = document.getElementById("sugCard");
-    const content = document.getElementById("sugContent");
-    content.innerHTML = `
-      <p style="font-size:12px;color:#6ee7b7;opacity:0.65;margin-bottom:10px;">Basado en los últimos 7 días de ventas y pedidos. Buffers del 30% incluidos.</p>` +
-      sugerencias.map(s => `
-        <div class="sug-item">
-          <span class="sug-nombre">${escHtml(s.nombre)}</span>
-          <span class="sug-avg">~${s.avg.toFixed(1)}/día prom.</span>
-          <span class="sug-cant">Producir ~${s.sugerido} uds.</span>
-        </div>`).join("");
-    card.style.display = "block";
-  } catch { /* silencioso */ }
-}
 
 
 // ─── CAJA (modo empleado) ────────────────────────────────────────────────────
@@ -5962,10 +5932,11 @@ function exportarCSV() {
   const tx = pedidosTodos.filter(t => parseDate(t.created_at) >= cutoff);
   if (!tx.length) { alert("No hay datos para exportar."); return; }
   const rows = [["Fecha","Nombre","Tipo","Precio","Cantidad","Ganancia"]];
+  const tipoLabel = { venta: "Venta", pedido: "Pedido cliente", fiado: "Fiado cobrado" };
   tx.forEach(t => rows.push([
     t.created_at,
     t.nombre,
-    t.tipo === "venta" ? "Venta" : "Pedido",
+    tipoLabel[t.tipo] || t.tipo,
     (t.precio  ?? 0).toFixed(2),
     (t.cantidad ?? 0),
     (t.ganancia ?? 0).toFixed(2)
