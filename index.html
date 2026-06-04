@@ -305,7 +305,8 @@ body {
   transition: background 0.18s, color 0.18s, border-color 0.18s;
   font-family: inherit;
 }
-.sidebar-nav button .nav-icon { font-size: 18px; line-height: 1; }
+.sidebar-nav button .nav-icon { display:flex; align-items:center; justify-content:center; width:18px; height:18px; flex-shrink:0; }
+.sidebar-nav button .nav-icon svg { width:18px; height:18px; }
 .sidebar-nav button:hover { background: rgba(245,158,11,0.09); color: #fbbf24; }
 .sidebar-nav button.nav-active {
   background: rgba(245,158,11,0.12);
@@ -630,7 +631,7 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
   color: #fcd34d;
   gap: 10px;
 }
-.empty-state .empty-icon { font-size: 46px; }
+.empty-state .empty-icon { display: none; }
 .empty-state h3 { font-size: 17px; color: #fde68a; font-weight: 600; }
 .empty-state p  { font-size: 13px; opacity: 0.65; line-height: 1.6; max-width: 240px; }
 
@@ -1801,7 +1802,12 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
 .l-feat:nth-child(6) { transition-delay: 0.40s; }
 .l-feat:hover { border-color: rgba(245,158,11,0.35); }
 .l-feat-icon {
-  font-size: 2rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  color: #f4a527;
+  opacity: 0.7;
   margin-bottom: 1rem;
   display: block;
 }
@@ -1895,7 +1901,7 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
 <body>
 
 <!-- OFFLINE BANNER -->
-<div id="offlineBanner">⚡ Sin conexión — mostrando datos guardados. Los cambios se guardarán cuando vuelva internet.</div>
+<div id="offlineBanner">Sin conexión — mostrando datos guardados. Los cambios se guardarán cuando vuelva internet.</div>
 
 <!-- ═══════════════ LANDING ═══════════════ -->
 <div id="landing">
@@ -1960,32 +1966,32 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
       <p class="l-how-sub">Nexora está pensado para que cualquier persona lo pueda usar,<br>sin conocimientos técnicos.</p>
       <div class="l-features">
         <div class="l-feat">
-          <span class="l-feat-icon">🧾</span>
+          <span class="l-feat-icon">01 — Ventas</span>
           <div class="l-feat-title">Registrá tus ventas</div>
           <div class="l-feat-desc">Anotá cada venta en segundos. Nexora descuenta el stock automáticamente y calcula tu ganancia del día.</div>
         </div>
         <div class="l-feat">
-          <span class="l-feat-icon">📋</span>
+          <span class="l-feat-icon">02 — Inventario</span>
           <div class="l-feat-title">Controlá tu stock</div>
           <div class="l-feat-desc">Sabé exactamente cuántos productos y materias primas tenés. Te avisa cuando algo está por agotarse.</div>
         </div>
         <div class="l-feat">
-          <span class="l-feat-icon">👨‍🍳</span>
+          <span class="l-feat-icon">03 — Producción</span>
           <div class="l-feat-title">Gestioná tu producción</div>
           <div class="l-feat-desc">Registrá lo que producís cada día. El sistema calcula automáticamente los ingredientes usados.</div>
         </div>
         <div class="l-feat">
-          <span class="l-feat-icon">📊</span>
+          <span class="l-feat-icon">04 — Finanzas</span>
           <div class="l-feat-title">Mirá tus números</div>
           <div class="l-feat-desc">Dashboard con tus ventas, gastos y ganancias del día. Reportes semanales y mensuales en un vistazo.</div>
         </div>
         <div class="l-feat">
-          <span class="l-feat-icon">👥</span>
+          <span class="l-feat-icon">05 — Clientes</span>
           <div class="l-feat-title">Seguí a tus clientes</div>
           <div class="l-feat-desc">Registrá pedidos, manejá cuentas fiado y llevá el historial de cada cliente sin papeles.</div>
         </div>
         <div class="l-feat">
-          <span class="l-feat-icon">🧠</span>
+          <span class="l-feat-icon">06 — IA</span>
           <div class="l-feat-title">Asistente con IA</div>
           <div class="l-feat-desc">Preguntale al asistente sobre tus precios, tu rentabilidad o cómo mejorar tu negocio. Responde con datos reales.</div>
         </div>
@@ -2107,62 +2113,60 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
   <nav class="sidebar-nav">
 
     <button data-screen="ia" onclick="navTo('ia')">
-      <span class="nav-icon">🧠</span> Asistente IA
+      <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg></span> Asistente IA
     </button>
 
     <div class="nav-section-label">Ventas</div>
     <button data-screen="ventas" onclick="navTo('ventas')">
-      <span class="nav-icon">🧾</span> Ventas
+      <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span> Ventas
     </button>
     <button data-screen="clientes" onclick="navTo('clientes')">
-      <span class="nav-icon">👥</span> Clientes
+      <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span> Clientes
     </button>
     <button data-screen="fiado" onclick="navTo('fiado')">
-      <span class="nav-icon">📋</span> Fiado
+      <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg></span> Fiado
     </button>
 
     <div class="nav-section-label">Inventario</div>
     <button data-screen="inventario" onclick="navTo('inventario')">
-      <span class="nav-icon">📋</span> Productos
+      <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="9" height="9" rx="1"/><rect x="13" y="3" width="9" height="9" rx="1"/><rect x="2" y="13" width="9" height="9" rx="1"/><rect x="13" y="13" width="9" height="9" rx="1"/></svg></span> Productos
     </button>
     <button id="navInsumos" data-screen="insumos" onclick="navTo('insumos')">
-      <span class="nav-icon">🧂</span> Insumos
+      <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96 12 12.01l8.73-5.05M12 22.08V12"/></svg></span> Insumos
     </button>
 
     <div class="nav-section-label">Finanzas</div>
     <button data-screen="dashboard" onclick="navTo('dashboard')">
-      <span class="nav-icon">📊</span> Resumen
+      <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg></span> Resumen
     </button>
     <button data-screen="gastos" onclick="navTo('gastos')">
-      <span class="nav-icon">💸</span> Gastos
+      <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span> Gastos
     </button>
 
     <div class="nav-section-label">Ajustes</div>
     <button data-screen="recursos" onclick="navTo('recursos')">
-      <span class="nav-icon">🏢</span> Recursos
+      <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14"/><path d="M9 21v-4h6v4M9 9h.01M15 9h.01M9 13h.01M15 13h.01"/></svg></span> Recursos
     </button>
     <button data-screen="sucursales" onclick="navTo('sucursales')" id="navSucursales">
-      <span class="nav-icon">🏪</span> Sucursales
+      <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg></span> Sucursales
     </button>
 
   </nav>
   <div class="sidebar-footer">
     <button id="modoBtn" onclick="abrirCambioModo()" style="font-size:12px;opacity:0.55;margin-bottom:4px;">
-      <span class="nav-icon">⚡</span> <span id="modoLabel">Modo: Avanzado</span>
+      <span id="modoLabel">Modo: Avanzado</span>
     </button>
-    <button onclick="logout()">
-      <span class="nav-icon">🚪</span> Cerrar sesión
-    </button>
+    <button onclick="logout()">Cerrar sesión</button>
   </div>
 </div>
 
 <!-- ═══════════════ IA ═══════════════ -->
 <div id="ia" class="screen">
   <div class="chat-header" id="chatHeader" style="display:none;">
-    <button class="btn-limpiar" onclick="limpiarHistorialChat()">🗑️ Limpiar historial</button>
+    <button class="btn-limpiar" onclick="limpiarHistorialChat()">Limpiar historial</button>
   </div>
   <div class="chat-welcome" id="chatWelcome">
-    <div class="chat-welcome-icon">🧠</div>
+    <div class="chat-welcome-icon" style="font-size:2rem;opacity:0.4;font-family:'JetBrains Mono',monospace;letter-spacing:-0.04em;">IA</div>
     <h3>¿En qué puedo ayudarte?</h3>
     <p>Contame sobre tu negocio y te doy recomendaciones basadas en tus datos reales.</p>
   </div>
@@ -2183,7 +2187,7 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
       <h2 style="margin:0;">Resumen</h2>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         <button class="btn-cierre-hdr" onclick="exportarCSV()">↓ CSV</button>
-        <button class="btn-cierre-hdr" onclick="abrirCierreDia()">☀ Cerrar día</button>
+        <button class="btn-cierre-hdr" onclick="abrirCierreDia()">Cerrar día</button>
       </div>
     </div>
     <div id="dashLoading" class="dash-loading" style="display:none;">Cargando datos…</div>
@@ -2196,29 +2200,25 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
 
     <!-- Alerta stock bajo -->
     <div class="stock-alert-card" id="stockAlerta">
-      <div class="stock-alert-title">⚠️ Stock bajo</div>
+      <div class="stock-alert-title">Stock bajo</div>
       <div class="stock-alert-list" id="stockAlertaList"></div>
     </div>
 
     <!-- KPIs financieros -->
     <div class="kpi-row">
       <div class="kpi-card">
-        <div class="kpi-icon">💵</div>
         <div class="kpi-label">Ingresos hoy</div>
         <div class="kpi-value" id="kpiIngresosHoy">$0</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-icon">📅</div>
         <div class="kpi-label">Ingresos del mes</div>
         <div class="kpi-value" id="kpiIngresosMes">$0</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-icon">📈</div>
         <div class="kpi-label">Ganancia del mes</div>
         <div class="kpi-value green" id="kpiGananciaMes">$0</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-icon">📉</div>
         <div class="kpi-label">Gastos del mes</div>
         <div class="kpi-value" id="kpiGastosMes">$0</div>
       </div>
@@ -2341,7 +2341,7 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
   <div class="app-screen" style="max-width:900px;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
       <h2 style="margin:0;">Ventas</h2>
-      <button class="btn-cierre-hdr" onclick="abrirCierreDia()">☀ Cerrar día</button>
+      <button class="btn-cierre-hdr" onclick="abrirCierreDia()">Cerrar día</button>
     </div>
 
     <!-- Tabs -->
@@ -2439,13 +2439,13 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
       </div>
       <div class="calc-close-btns">
         <button class="calc-close-btn calc-btn-efectivo" id="vCalcBtnEfectivo" onclick="vCerrarVenta('efectivo')">
-          <span class="cb-icon">💵</span><span class="cb-label">Efectivo</span>
+          <span class="cb-label">Efectivo</span>
         </button>
         <button class="calc-close-btn calc-btn-transferencia" id="vCalcBtnTransferencia" onclick="vCerrarVenta('transferencia')">
-          <span class="cb-icon">📱</span><span class="cb-label">Transferencia</span>
+          <span class="cb-label">Transferencia</span>
         </button>
         <button class="calc-close-btn calc-btn-tarjeta" id="vCalcBtnTarjeta" onclick="vCerrarVenta('tarjeta')">
-          <span class="cb-icon">💳</span><span class="cb-label">Tarjeta</span>
+          <span class="cb-label">Tarjeta</span>
         </button>
       </div>
       <button class="calc-anular" onclick="vAnularUltima()">✕ Anular última venta</button>
@@ -2461,7 +2461,7 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
       <h2 style="margin:0;">Clientes</h2>
       <button class="btn-cierre-hdr" onclick="descargarExcelClientes()" id="btnExcelClientes">
-        📊 Exportar Excel
+        Exportar Excel
       </button>
     </div>
 
@@ -2506,7 +2506,7 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
             <button class="periodo-tab"        onclick="setCalPeriodo(14,this)">14 días</button>
             <button class="periodo-tab"        onclick="setCalPeriodo(30,this)">30 días</button>
           </div>
-          <button class="btn-cierre-hdr" onclick="descargarExcelClientes()" id="btnExcelClientes" style="white-space:nowrap;">↓ Excel</button>
+          <button class="btn-cierre-hdr" onclick="descargarExcelClientes()" id="btnExcelClientes" style="white-space:nowrap;">Exportar Excel</button>
         </div>
       </div>
       <div id="calendarioTabla" style="overflow-x:auto;"></div>
@@ -2562,7 +2562,7 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
 <!-- ═══════════════ MODAL PEDIDO ═══════════════ -->
 <div class="modal-overlay" id="modalPedido">
   <div class="modal-box">
-    <h3>📦 Nuevo Pedido</h3>
+    <h3>Nuevo Pedido</h3>
     <p id="pedidoClienteNombre" style="color:#6ee7b7;font-size:13px;margin-bottom:14px;"></p>
     <select id="pedidoProducto" class="form-select" onchange="onPedidoProdChange()">
       <option value="">Seleccioná un producto...</option>
@@ -2615,7 +2615,7 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
 <!-- ═══════════════ MODAL FIADO ═══════════════ -->
 <div class="modal-overlay" id="modalFiado">
   <div class="modal-box" style="max-width:460px;">
-    <h3>📋 Fiado</h3>
+    <h3>Fiado</h3>
     <p id="fiadoClienteNombre" style="color:#6ee7b7;font-size:13px;margin-bottom:12px;"></p>
 
     <!-- Lista deudas pendientes -->
@@ -2701,7 +2701,7 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
 
     <!-- Recomendaciones de restock -->
     <div class="card" id="consumoCard" style="display:none;">
-      <h3>📊 Recomendaciones de restock</h3>
+      <h3>Recomendaciones de restock</h3>
       <p style="font-size:12px;color:#86efac;opacity:0.55;margin-bottom:12px;">Basado en los últimos 30 días de producción.</p>
       <div class="inv-wrap">
         <table class="inv-table">
@@ -2745,7 +2745,7 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
 
     <!-- Pedidos pendientes -->
     <div class="card" id="pendientesCard" style="display:none;">
-      <h3>📦 Pedidos pendientes</h3>
+      <h3>Pedidos pendientes</h3>
       <div id="pendientesBody"></div>
     </div>
 
@@ -2912,13 +2912,13 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
     <!-- Cerrar venta -->
     <div class="calc-close-btns">
       <button class="calc-close-btn calc-btn-efectivo" id="calcBtnEfectivo" onclick="cerrarVenta('efectivo')">
-        <span class="cb-icon">💵</span><span class="cb-label">Efectivo</span>
+        <span class="cb-label">Efectivo</span>
       </button>
       <button class="calc-close-btn calc-btn-transferencia" id="calcBtnTransferencia" onclick="cerrarVenta('transferencia')">
-        <span class="cb-icon">📱</span><span class="cb-label">Transferencia</span>
+        <span class="cb-label">Transferencia</span>
       </button>
       <button class="calc-close-btn calc-btn-tarjeta" id="calcBtnTarjeta" onclick="cerrarVenta('tarjeta')">
-        <span class="cb-icon">💳</span><span class="cb-label">Tarjeta</span>
+        <span class="cb-label">Tarjeta</span>
       </button>
     </div>
 
@@ -2926,7 +2926,7 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
     <button class="calc-anular" onclick="anularUltimaVenta()">✕ Anular última venta</button>
 
     <!-- Cerrar día -->
-    <button class="calc-cerrar-dia" onclick="abrirCierreDia()">☀ Cerrar día</button>
+    <button class="calc-cerrar-dia" onclick="abrirCierreDia()">Cerrar día</button>
 
     <!-- Historial -->
     <div id="calcHistorial"></div>
@@ -2968,7 +2968,7 @@ h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; margin-top: 6px; }
     </div>
     <div style="display:flex;gap:10px;margin-top:4px;">
       <button class="cierre-close-btn" style="flex:1;" onclick="cerrarCierreDia()">Cerrar</button>
-      <button id="cierreShareBtn" class="cierre-close-btn" style="flex:1;background:rgba(37,211,102,0.15);border-color:rgba(37,211,102,0.35);color:#25d366;display:none;" onclick="compartirCierre()">📲 Compartir</button>
+      <button id="cierreShareBtn" class="cierre-close-btn" style="flex:1;background:rgba(37,211,102,0.15);border-color:rgba(37,211,102,0.35);color:#25d366;display:none;" onclick="compartirCierre()">Compartir</button>
     </div>
   </div>
 </div>
@@ -3771,10 +3771,10 @@ function renderStockCard(item, tipo) {
 
   const btns = esProducto
     ? `<button onclick="abrirReceta(${id})" title="Receta">🥖</button>
-       <button onclick="abrirEdicion(${id})" title="Editar">✏️</button>
-       <button onclick="eliminarProducto(${id})" title="Eliminar">🗑️</button>`
-    : `<button onclick="abrirEditInsumo(${id})" title="Editar">✏️</button>
-       <button onclick="eliminarInsumo(${id})" title="Eliminar">🗑️</button>`;
+       <button onclick="abrirEdicion(${id})" title="Editar">Editar</button>
+       <button onclick="eliminarProducto(${id})" title="Eliminar">Eliminar</button>`
+    : `<button onclick="abrirEditInsumo(${id})" title="Editar">Editar</button>
+       <button onclick="eliminarInsumo(${id})" title="Eliminar">Eliminar</button>`;
 
   return `<div class="stock-card${bajo ? " sc-low" : ""}">
     <div class="sc-name">${escHtml(nombre)}</div>
@@ -3782,7 +3782,7 @@ function renderStockCard(item, tipo) {
       <span class="sc-stock-val">${stockFmt}</span>
       <span class="sc-stock-unit">${unidad}</span>
     </div>
-    ${bajo ? '<span class="sc-low-badge">⚠ stock bajo</span>' : ""}
+    ${bajo ? '<span class="sc-low-badge">stock bajo</span>' : ""}
     <hr class="sc-divider">
     ${metaHTML}
     <div class="sc-btns">${btns}</div>
@@ -3898,7 +3898,7 @@ function _notificarStockBajo(bajos) {
   const enviar = () => {
     localStorage.setItem(clave, "1");
     const nombres = bajos.map(p => p.producto).join(", ");
-    new Notification("⚠️ Stock bajo en Nexora", {
+    new Notification("Stock bajo — Nexora", {
       body: `${bajos.length === 1 ? "Le queda poco a" : "Poco stock:"} ${nombres}`,
       icon: "/nexora-icon.svg",
       badge: "/nexora-icon.svg",
@@ -3935,8 +3935,8 @@ function renderListaProductos() {
       </div>
       ${badge}
       <div class="product-actions">
-        <button class="btn-icon btn-edit"   onclick="abrirEdicion(${p.id})"     title="Editar">✏️</button>
-        <button class="btn-icon btn-delete" onclick="eliminarProducto(${p.id})" title="Eliminar">🗑️</button>
+        <button class="btn-icon btn-edit"   onclick="abrirEdicion(${p.id})"     title="Editar">Editar</button>
+        <button class="btn-icon btn-delete" onclick="eliminarProducto(${p.id})" title="Eliminar">Eliminar</button>
       </div>
     </div>`;
   }).join("");
@@ -4551,7 +4551,7 @@ async function registrarProduccion() {
         : (json.con_receta ? "" : " (sin receta)");
       let msg = `✓ ${json.msg}. Stock: ${formatNum(json.stock_nuevo)} ${json.unidad || 'u'}${costoMsg}`;
       if (json.consumo && json.consumo.length > 0) {
-        msg += "\n📦 Se usó: " + json.consumo.map(c => `${formatNum(c.usado)} ${c.unidad} de ${c.nombre}`).join(", ");
+        msg += "\nSe usó: " + json.consumo.map(c => `${formatNum(c.usado)} ${c.unidad} de ${c.nombre}`).join(", ");
       }
       mostrarAlerta("respuestaProduccion", msg, "success");
       document.getElementById("prodCantidad").value = 1;
@@ -4798,7 +4798,7 @@ function renderCajaHoy(ventasHoy, pedidosHoy, gastosHoy, prodHoy, fiadosHoy, hoy
   const col = n => n >= 0 ? "caja-val green" : "caja-val red";
 
   const filaFiado = ingF > 0
-    ? `<div class="caja-row"><span class="caja-label">✅ Fiado cobrado (${fiadosHoy.length})</span><span class="caja-val green">${fmt(ingF)}</span></div>`
+    ? `<div class="caja-row"><span class="caja-label">Fiado cobrado (${fiadosHoy.length})</span><span class="caja-val green">${fmt(ingF)}</span></div>`
     : "";
 
   content.innerHTML = `
@@ -5008,7 +5008,7 @@ function renderCalendarioClientes() {
         contenido += `<div class="cal-cell-pedido">${celda.pedidos.map(p => escHtml(p)).join("<br>")}</div>`;
       }
       celda.fiados.forEach(f => {
-        contenido += `<div class="cal-cell-fiado${f.pagado ? " pagado" : ""}">💳 ${escHtml(f.concepto)} ${fmt$(f.monto)}${f.pagado ? " ✓" : ""}</div>`;
+        contenido += `<div class="cal-cell-fiado${f.pagado ? " pagado" : ""}">${escHtml(f.concepto)} ${fmt$(f.monto)}${f.pagado ? " ·pagado" : ""}</div>`;
       });
       html += `<td>${contenido}</td>`;
     });
@@ -5032,15 +5032,15 @@ function renderClientes() {
           <span class="tipo-badge ${tipoBadgeClass(c.tipo)}">${c.tipo}</span>
           <span class="client-stats" style="margin-left:8px;">${c.total_pedidos} ped. · $${c.total_gastado.toLocaleString("es-AR",{minimumFractionDigits:2,maximumFractionDigits:2})}</span>
           <div class="client-actions-row">
-            <button class="btn-icon" style="background:rgba(245,158,11,0.13);"  onclick="abrirPedidoModal(${c.id})" title="Nuevo pedido">📦</button>
-            <button class="btn-icon" style="background:rgba(239,68,68,0.13);"  onclick="abrirModalFiado(${c.id})"  title="Fiado">📋</button>
-            <button class="btn-icon btn-edit"   onclick="abrirEditCliente(${c.id})" title="Editar">✏️</button>
-            <button class="btn-icon btn-delete" onclick="eliminarCliente(${c.id})"  title="Eliminar">🗑️</button>
+            <button class="btn-icon" style="background:rgba(245,158,11,0.13);"  onclick="abrirPedidoModal(${c.id})" title="Nuevo pedido">Pedido</button>
+            <button class="btn-icon" style="background:rgba(239,68,68,0.13);"  onclick="abrirModalFiado(${c.id})"  title="Fiado">Fiado</button>
+            <button class="btn-icon btn-edit"   onclick="abrirEditCliente(${c.id})" title="Editar">Editar</button>
+            <button class="btn-icon btn-delete" onclick="eliminarCliente(${c.id})"  title="Eliminar">Eliminar</button>
           </div>
         </div>
         ${c.telefono ? `<div style="font-size:12px;color:#6ee7b7;opacity:0.65;margin-top:4px;">📞 ${escHtml(c.telefono)}</div>` : ""}
         ${c.notas    ? `<div style="font-size:12px;color:#6ee7b7;opacity:0.55;margin-top:2px;">${escHtml(c.notas)}</div>` : ""}
-        ${fiadoDeudaCliente(c.id) > 0 ? `<div style="margin-top:6px;"><span class="fiado-badge">📋 Debe $${fiadoDeudaCliente(c.id).toLocaleString("es-AR",{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div>` : ""}
+        ${fiadoDeudaCliente(c.id) > 0 ? `<div style="margin-top:6px;"><span class="fiado-badge">Debe $${fiadoDeudaCliente(c.id).toLocaleString("es-AR",{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div>` : ""}
       </div>
       <div class="client-history" id="hist-${c.id}">
         <div style="padding:0 16px 14px;" id="histContent-${c.id}">
@@ -5210,7 +5210,7 @@ function renderGastos() {
       <span class="gasto-cat">${g.categoria}</span>
       <span class="gasto-monto">-$${g.monto.toLocaleString("es-AR",{minimumFractionDigits:2,maximumFractionDigits:2})}</span>
       <span class="gasto-fecha">${g.fecha}</span>
-      <button class="btn-icon btn-delete" onclick="eliminarGasto(${g.id})" title="Eliminar">🗑️</button>
+      <button class="btn-icon btn-delete" onclick="eliminarGasto(${g.id})" title="Eliminar">Eliminar</button>
     </div>`).join("");
 
   // Resumen por categoría del mes actual
@@ -5570,7 +5570,7 @@ function renderFiadoScreen() {
       return `
         <div class="fiado-group">
           <div class="fiado-group-header">
-            <span class="fiado-group-nombre">👤 ${escHtml(grupo.nombre)}</span>
+            <span class="fiado-group-nombre">${escHtml(grupo.nombre)}</span>
             <span class="fiado-group-saldo${saldo === 0 ? " cero" : ""}">Debe ${fmt(saldo)}</span>
           </div>
           <div class="fiado-group-body">${rows}</div>
@@ -5747,7 +5747,7 @@ async function cargarHistorialCaja() {
     const ventas = await res.json();
     const el = document.getElementById("calcHistorial");
     if (!ventas.length) { el.innerHTML = `<div class="calc-hist-title">Sin ventas hoy</div>`; return; }
-    const icon = { efectivo:"💵", transferencia:"📱", tarjeta:"💳" };
+    const icon = { efectivo:"", transferencia:"", tarjeta:"" };
     const fmt  = n => "$" + n.toLocaleString("es-AR");
     const total = ventas.reduce((s,v) => s + v.monto, 0);
     el.innerHTML = `
@@ -5868,7 +5868,7 @@ async function vCargarHistorial() {
     const data = await res.json();
     const el = document.getElementById("vCalcHistorial");
     if (!data.length) { el.innerHTML = `<div class="calc-hist-title">Sin ventas hoy</div>`; return; }
-    const icon = { efectivo:"💵", transferencia:"📱", tarjeta:"💳" };
+    const icon = { efectivo:"", transferencia:"", tarjeta:"" };
     const fmt  = n => "$" + n.toLocaleString("es-AR");
     const total = data.reduce((s,v) => s + v.monto, 0);
     el.innerHTML = `
@@ -5988,7 +5988,7 @@ async function abrirCierreDia() {
 
     const metodos = s.por_metodo || {};
     const mkeys   = Object.keys(metodos);
-    const iconM   = { efectivo:"💵", transferencia:"📱", tarjeta:"💳" };
+    const iconM   = { efectivo:"", transferencia:"", tarjeta:"" };
     const labelM  = { efectivo:"Efectivo", transferencia:"Transferencia", tarjeta:"Tarjeta" };
 
     const el = document.getElementById("cierreMetodos");
@@ -6006,21 +6006,21 @@ async function abrirCierreDia() {
     // Ventas de productos
     if (s.total_productos > 0) {
       desglose += `<div class="cierre-metodo-row">
-        <span>🧾 Ventas de productos</span>
+        <span>Ventas de productos</span>
         <span style="font-weight:700;color:#fbbf24;">${fmt(s.total_productos)}</span>
       </div>`;
     }
     // Pedidos de clientes
     if (s.total_pedidos > 0) {
       desglose += `<div class="cierre-metodo-row">
-        <span>📦 Pedidos de clientes (${s.cant_pedidos})</span>
+        <span>Pedidos de clientes (${s.cant_pedidos})</span>
         <span style="font-weight:700;color:#fbbf24;">${fmt(s.total_pedidos)}</span>
       </div>`;
     }
     // Fiados cobrados
     if (s.total_fiados > 0) {
       desglose += `<div class="cierre-metodo-row" style="border-top:1px solid rgba(74,222,128,0.2);margin-top:6px;padding-top:6px;">
-        <span>✅ Fiado cobrado (${s.cant_fiados_cobrados})</span>
+        <span>Fiado cobrado (${s.cant_fiados_cobrados})</span>
         <span style="font-weight:700;color:#4ade80;">${fmt(s.total_fiados)}</span>
       </div>`;
     }
@@ -6039,11 +6039,11 @@ function compartirCierre() {
   const s    = _cierreData.stats || {};
   const fmt  = n => "$" + (n || 0).toLocaleString("es-AR");
   const hoy  = new Date().toLocaleDateString("es-AR", { weekday:"long", day:"numeric", month:"long" });
-  const iconM = { efectivo:"💵", transferencia:"📱", tarjeta:"💳" };
+  const iconM = { efectivo:"", transferencia:"", tarjeta:"" };
   const metodos = [
     ...Object.entries(s.por_metodo || {}).map(([k, v]) => `  ${iconM[k] || "💰"} ${k.charAt(0).toUpperCase()+k.slice(1)}: ${fmt(v)}`),
-    s.total_pedidos > 0 ? `  📦 Pedidos de clientes: ${fmt(s.total_pedidos)}` : "",
-    s.total_fiados  > 0 ? `  ✅ Fiado cobrado: ${fmt(s.total_fiados)}`        : "",
+    s.total_pedidos > 0 ? `  Pedidos de clientes: ${fmt(s.total_pedidos)}` : "",
+    s.total_fiados  > 0 ? `  Fiado cobrado: ${fmt(s.total_fiados)}`        : "",
   ].filter(Boolean).join("\n");
   const texto = [
     `☀️ *Cierre del día — ${hoy}*`,
